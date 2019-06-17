@@ -1,0 +1,177 @@
+Archetype,Year,Peril,Total affected
+KPK,1992,Earthquake,8840
+KPK,2001,Flood,500
+KPK,2003,Flood,183.6
+KPK,2004,Earthquake,38624
+KPK,2005,Flood,3034646
+KPK,2005,Earthquake,1700000
+KPK,2006,Flood,308754
+KPK,2007,Flood,340
+KPK,2008,Earthquake,68200
+KPK,2009,Flood,3060
+KPK,2010,Flood,3340169.5
+KPK,2012,Flood,45958.8
+KPK,2013,Flood,22519.6
+KPK,2014,Flood,1424596.181
+KPK,2015,Flood,1097097.872
+KPK,2015,Earthquake,1420879.729
+3 Region Total,1973,Flood,4490000
+3 Region Total,1975,Flood,1809518
+3 Region Total,1976,Flood,6330880
+3 Region Total,1977,Flood,580252
+3 Region Total,1978,Flood,1626593
+3 Region Total,1979,Flood,40800
+3 Region Total,1980,Flood,4318
+3 Region Total,1981,Flood,648373
+3 Region Total,1982,Flood,25694
+3 Region Total,1983,Flood,65460
+3 Region Total,1984,Flood,52989
+3 Region Total,1985,Flood,19600
+3 Region Total,1986,Flood,794264
+3 Region Total,1988,Flood,2881300
+3 Region Total,1989,Flood,146062
+3 Region Total,1990,Flood,14653
+3 Region Total,1992,Earthquake,8840
+3 Region Total,1992,Flood,4331958
+3 Region Total,1993,Flood,264022
+3 Region Total,1994,Flood,942250
+3 Region Total,1995,Flood,2142586
+3 Region Total,1996,Flood,1272499
+3 Region Total,1997,Flood,2085585
+3 Region Total,1998,Flood,1148
+3 Region Total,1999,Flood,248
+3 Region Total,2000,Flood,701
+3 Region Total,2001,Flood,500
+3 Region Total,2001,Drought,8277600
+3 Region Total,2001,Earthquake,900000
+3 Region Total,2002,Drought,8383200
+3 Region Total,2003,Flood,877369.6
+3 Region Total,2003,Drought,74400
+3 Region Total,2004,Earthquake,38624
+3 Region Total,2004,Drought,751200
+3 Region Total,2005,Flood,3365908
+3 Region Total,2005,Earthquake,1700000
+3 Region Total,2006,Flood,2181072
+3 Region Total,2007,Flood,5797.6
+3 Region Total,2008,Earthquake,68200
+3 Region Total,2008,Flood,417924.3647
+3 Region Total,2009,Flood,324812.4885
+3 Region Total,2010,Flood,16711042.5
+3 Region Total,2011,Flood,8981674.5
+3 Region Total,2012,Flood,4108019.8
+3 Region Total,2013,Flood,547352.6
+3 Region Total,2014,Flood,1424596.181
+3 Region Total,2014,Drought,1689649
+3 Region Total,2015,Flood,2099066.872
+3 Region Total,2015,Earthquake,1420879.729
+Punjab,1973,Flood,4490000
+Punjab,1975,Flood,1809518
+Punjab,1976,Flood,6330880
+Punjab,1977,Flood,580252
+Punjab,1978,Flood,1626593
+Punjab,1979,Flood,40800
+Punjab,1980,Flood,4318
+Punjab,1981,Flood,648373
+Punjab,1982,Flood,25694
+Punjab,1983,Flood,65460
+Punjab,1984,Flood,52989
+Punjab,1985,Flood,19600
+Punjab,1986,Flood,794264
+Punjab,1988,Flood,2881300
+Punjab,1989,Flood,146062
+Punjab,1990,Flood,14653
+Punjab,1992,Flood,4121010
+Punjab,1993,Flood,264022
+Punjab,1994,Flood,252215
+Punjab,1995,Flood,1638131
+Punjab,1996,Flood,1272499
+Punjab,1997,Flood,2085585
+Punjab,1998,Flood,1148
+Punjab,1999,Flood,248
+Punjab,2000,Flood,701
+Punjab,2001,Drought,8277600
+Punjab,2002,Drought,8383200
+Punjab,2003,Flood,8080
+Punjab,2003,Drought,74400
+Punjab,2004,Drought,751200
+Punjab,2005,Flood,331262
+Punjab,2006,Flood,301437
+Punjab,2007,Flood,5172
+Punjab,2008,Flood,110308
+Punjab,2009,Flood,208
+Punjab,2010,Flood,6200000
+Punjab,2011,Flood,26393
+Punjab,2012,Flood,887345
+Sindh,1992,Flood,210948
+Sindh,1994,Flood,690035
+Sindh,1995,Flood,504455
+Sindh,2001,Earthquake,900000
+Sindh,2003,Flood,869106
+Sindh,2006,Flood,1570881
+Sindh,2007,Flood,285.6
+Sindh,2008,Flood,307616.3647
+Sindh,2009,Flood,321544.4885
+Sindh,2010,Flood,7170873
+Sindh,2011,Flood,8955281.5
+Sindh,2012,Flood,3174716
+Sindh,2013,Flood,524833
+Sindh,2014,Drought,1689649
+Sindh,2015,Flood,1001969
+Pakistan,1973,Flood,4490000
+Pakistan,1975,Flood,1809518
+Pakistan,1976,Flood,6330880
+Pakistan,1977,Flood,580252
+Pakistan,1978,Flood,1626593
+Pakistan,1979,Flood,40800
+Pakistan,1980,Flood,4318
+Pakistan,1981,Flood,648373
+Pakistan,1982,Flood,25694
+Pakistan,1983,Flood,65460
+Pakistan,1984,Flood,52989
+Pakistan,1985,Flood,19600
+Pakistan,1986,Flood,794264
+Pakistan,1988,Flood,2881300
+Pakistan,1989,Flood,146062
+Pakistan,1990,Flood,14653
+Pakistan,1991,Flood,680
+Pakistan,1992,Earthquake,8840
+Pakistan,1992,Flood,4338758
+Pakistan,1993,Flood,264022
+Pakistan,1994,Flood,942250
+Pakistan,1995,Flood,2142586
+Pakistan,1996,Flood,1272499
+Pakistan,1997,Flood,2085585
+Pakistan,1998,Flood,28348
+Pakistan,1999,Flood,248
+Pakistan,2000,Drought,1200000
+Pakistan,2000,Flood,701
+Pakistan,2001,Drought,8277600
+Pakistan,2001,Earthquake,900000
+Pakistan,2001,Flood,500
+Pakistan,2002,Drought,8383200
+Pakistan,2002,Earthquake,120702.3
+Pakistan,2002,Flood,4010
+Pakistan,2003,Drought,74400
+Pakistan,2003,Flood,1192093.3
+Pakistan,2004,Drought,751200
+Pakistan,2004,Earthquake,25886
+Pakistan,2005,Earthquake,4314154.5
+Pakistan,2005,Flood,5481526.5
+Pakistan,2006,Flood,1094598.5
+Pakistan,2007,Flood,4251.8
+Pakistan,2008,Earthquake,271760
+Pakistan,2008,Flood,200536
+Pakistan,2009,Flood,39238.6
+Pakistan,2010,Flood,19240466.1
+Pakistan,2011,Earthquake,1000
+Pakistan,2011,Flood,7352008
+Pakistan,2012,Flood,4983557.1
+Pakistan,2013,Earthquake,200974
+Pakistan,2013,Flood,760150.8
+Pakistan,2014,Flood,2530673
+Pakistan,2014,Drought,1689649
+Pakistan,2015,Earthquake,502675
+Pakistan,2015,Flood,1577490
+Pakistan,2016,Earthquake,142
+Pakistan,2016,Flood,10762
+Pakistan,2017,Flood,60650
