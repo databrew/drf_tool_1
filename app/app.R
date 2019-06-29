@@ -18,11 +18,13 @@ library(shinyBS)
 # setwd('C:\\Users\\wb529583\\OneDrive - WBG\\Sri Lanka\\2019_Analysis,Tool,andNNDISReview\\StructuredFinancingTools\\Bangkok_Tool\\Bangkok_Tool\\Contingent_Liability\\')
 
 
+# Read in population data, historic loss data, and simulated loss profile data
 popn.data <- read.csv("../lib/RD_POP.csv",header=TRUE,stringsAsFactors=F)
 archetype.data <- read.csv("../lib/RD_NNDISHistoricLosses.csv",header=TRUE,stringsAsFactors = F)
 simulation.data <- read.csv("../lib/RD_NNDISSimulatedLossProfile.csv",header=TRUE,stringsAsFactors = F)
 source("../lib/cost_benefit_calculations_upd.R")
 source("../lib/functions.R")
+
 
 
 ui <- dashboardPage(skin = 'blue',

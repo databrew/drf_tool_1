@@ -163,15 +163,59 @@ build.cba.plot.array <- function(cost.benefit.percentiles1,cost.benefit.percenti
 }
 
 
-plot.historical <- function(regiondata, region) {
-  agg.data2 <- aggregate(regiondata[,3], by=list(regiondata$Year,regiondata$Peril),FUN="sum")    
-  names(agg.data2) <- c('Year','Peril','Total NNDIS Loss')
-  p <- ggplot(agg.data2,aes(Year, agg.data2$`Total NNDIS Loss`))
-  p <- p + geom_col(aes(fill=Peril)) +  theme_economist_white(gray_bg =F) + 
+# create plot to visualize population data
+plot_pop <- function(temp_dat){
+  p <- ggplot(temp_dat, aes(Year, Population, color = Region)) +
+    geom_line(alpha = 0.6, size = 2) +
+    scale_color_manual(name = '',
+                       values = c('black', 'grey', 'blue', 'red', 
+                                  'green')) +
+    labs(x="Year", 
+         y="Population",
+         title= 'Population by year') +
+    theme_economist_white()
+  return(p)
+}
+
+
+# create plot to visualize archetype data
+plot_archetype<- function(temp_dat, region){
+  names(temp_dat) <- c('Year', 'Peril', 'Total NNDIS Loss')
+  p <- ggplot(temp_dat, aes(Year, `Total NNDIS Loss`, fill = Peril)) +
+    geom_bar(stat = 'identity', alpha = 0.6) +
+    scale_fill_manual(name = '',
+                      values = c('blue', 'red')) +
     labs(x="Year", 
          y="Total NNDIS Loss (LKR, millions)",
-         title=paste("Burning cost losses for ",region, sep=''))
-  
-  return(p)  
-  
+         title=paste("Burning cost losses for ",region, sep='')) +
+    theme_economist_white()
+  return(p)
 }
+
+# create plot to visualize simulationdata data
+plot_sim <- function(temp_dat){
+  p <- ggplot(temp_dat, aes(SimulatedNNDISLoss)) +
+    geom_histogram(alpha = 0.6) +
+    labs(x="Simulated Loss", 
+         y="Frequency",
+         title='Distribution of simulated loss',
+         subtitle = '10k simulations') +
+    theme_economist_white()
+  return(p)
+}
+
+
+# plot.historical <- function(regiondata, region) {
+#   agg.data2 <- aggregate(regiondata[,3], by=list(regiondata$Year,regiondata$Peril),FUN="sum")    
+#   names(agg.data2) <- c('Year','Peril','Total NNDIS Loss')
+#   p <- ggplot(agg.data2,aes(Year, agg.data2$`Total NNDIS Loss`))
+#   p <- p + geom_col(aes(fill=Peril)) +  theme_economist_white(gray_bg =F) + 
+#     labs(x="Year", 
+#          y="Total NNDIS Loss (LKR, millions)",
+#          title=paste("Burning cost losses for ",region, sep='')) +
+#     scale_fill_manual(name = '',
+#                       values = c('blue', 'red'))
+#   
+#   return(p)  
+#   
+# }
