@@ -81,6 +81,15 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = 'stats',
                                 fluidRow(
                                   column(4, 
+                                         radioButtons('data_type',
+                                                      'Data type',
+                                                      choices = c('Total damage', 'Cost per person'),
+                                                      selected = 'Total damage')),
+                                  column(4,
+                                         uiOutput('cost_per_person'))
+                                ),
+                                fluidRow(
+                                  column(4, 
                                          selectInput('country',
                                                      'Choose a country',
                                                      choices = countries,
@@ -92,12 +101,12 @@ ui <- dashboardPage(skin = 'blue',
                                                       selected = 'USD'))
                                 ),
                                 fluidRow(
-                                  column(3, 
+                                  column(4, 
                                          uiOutput('code')),
-                                  column(3,
+                                  column(4,
                                          uiOutput('rate')),
-                                  column(3,
-                                         textOutput('wrong_code'))
+                                  column(4,
+                                         textOutput('display_rate'))
                                 ),
                                 fluidRow(
                                   column(4,
@@ -271,10 +280,23 @@ ui <- dashboardPage(skin = 'blue',
 
 server <- function(input, output) {
   
+  # create a uioutput for when data type == cost per person
+  output$cost_per_person <- renderUI({
+    if(input$data_type != 'Cost per person'){
+      NULL
+    } else {
+      numericInput('cost_per_person',
+                'Enter coster per person USD', 
+                min = 0,
+                max = 1000,
+                step = 10,
+                value = 50)
+    }
+  })
   
   # create uioutput code for cases where the user choses a currency other than USD
   output$code <- renderUI({
-    if(input$currency == 'USD'){
+    if(input$currency == 'USD' | input$data_type == 'Cost per person'){
       NULL
     } else {
       selectInput('code',
@@ -284,14 +306,12 @@ server <- function(input, output) {
     }
   })
   
-  # PROBLEM - need to fix this so when a currency code s 
-  
   # create a uiouput for if an invalid code is selected once "other" is chosen for currency
-  output$wrong_code <- renderText({
-    if(is.null(input$code)){
+  output$display_rate <- renderText({
+    if(is.null(input$code) | input$data_type == 'Cost per person'){
       NULL
-    } else if(input$currency == 'Other' & (!input$code %in% other_currencies & is.null(input$code))) {
-      'Currency code is invalid'
+    } else {
+      "Conversion rate only required when data type is 'Total damage'"
     }
     
   })
@@ -299,7 +319,7 @@ server <- function(input, output) {
   
   # create uioutput rate for cases where the user choses a currency other than USD
   output$rate <- renderUI({
-    if(input$currency == 'USD'){
+    if(input$currency == 'USD' | input$data_type == 'Cost per person'){
       return(NULL) 
     } else {
       numericInput('rate',
@@ -311,6 +331,7 @@ server <- function(input, output) {
     }
   })
   
+
   
   observeEvent(input$paramdefs, {
     showModal(modalDialog(
