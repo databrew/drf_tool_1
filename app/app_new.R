@@ -286,13 +286,31 @@ ui <- dashboardPage(skin = 'blue',
 server <- function(input, output) {
   
   # placeholders
-  region_name <- 'Punjab'
+  region_name <- '3 Region Total'
   data <- popn.data[popn.data$Region == region_name,]
+  data <- data[order(data$Year, decreasing = TRUE),]
   data$scaling_factor <- data$Population[1]/data$Population
-  data <- inner_join(data, archetype.data, by = 'Year')
+  data <- left_join(data, archetype.data, by = 'Year')
   data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
   p_value <- trend.test(data$scaled_loss,plot = FALSE) # i
   p_value <- p_value$p.value
+  # temporarily do simulation 
+  data <- data[complete.cases(data),]
+  # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+  # get trials max year minus min year
+  num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
+  num_trials <- num_trials + 1
+  mle_bern <- sum(nrow(data)/num_trials)
+  uniform_dis <- runif(1000, 0, 1)
+  sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+  # create a variable to show success (mle?uniform_dis, then success)
+  sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
+  
+  # temporary code for fitting distribution to the loss data
+  weibull <- fitdistr(x, "weibull")
+  lognormal <- fitdistr(x, "lognormal")
+  gamma <- fitdistr(x, "gamma")
+  
   
   
   
@@ -310,6 +328,8 @@ server <- function(input, output) {
     
     # current pop/histic pop in year i, where i represents each of the years prior to the current population in the modelled time horizon.
     # The current pop is defined as the most recent population figure available in the Tool or entered by the user.
+    data <- data[order(data$Year, decreasing = TRUE),]
+    
     data$scaling_factor <- data$Population[1]/data$Population
     
     # Multiply the original loss data value by the respective scaling factor based on the year the loss data value is from.
@@ -343,8 +363,7 @@ server <- function(input, output) {
     # will have other options for different scales later
     loss_data <- scale_by_pop()
   })
-  
-  
+
   
   # create plot with p value for advanced users who also selected further linear scaling (detrend)
   output$advanced_detrend_plot <- renderPlot({
@@ -470,6 +489,8 @@ server <- function(input, output) {
     }
     
   })
+  
+  
   
   observeEvent(input$paramdefs, {
     showModal(modalDialog(
@@ -772,6 +793,7 @@ server <- function(input, output) {
                {
                  sim.losses <- simulation.data$SimulatedNNDISLoss*1000000*scale.up/isolate(nndis.factor())
                  showNotification("Running Tool")
+                 sim.losses <- simulation.data$SimulatedNNDISLoss*1000000*100/isolate(2.5)
                  
                  ## ========================================== ##
                  ## Strategy A & B & C                         ##
