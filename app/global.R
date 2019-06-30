@@ -12,6 +12,7 @@ library(shinyjqui)
 library(bsplus)
 library(htmltools)
 library(shinyBS)
+library(aTSA)
 
 options(scipen=999)
 # Read in population data, historic loss data, and simulated loss profile data
@@ -35,6 +36,13 @@ currencies <- c('USD', 'Other')
 # create a placeholer for other currency codes
 other_currencies <- c('EUR', 'CNY')
 
+# create a placeholder for disturbution types
+basic_parametric <- c('Lognormal', 'Beta', 'Gamma', 
+                      'Frechet', 'Gumbel', 'Weilbull',
+                      'Poisson', ' Bernoulli')
+advanced_parametric <- c('Lognormal', 'Beta', 'Gamma', 
+                         'Frechet', 'Gumbel', 'Weilbull',
+                         'Pareto', 'Poisson', ' Bernoulli')
 
 
 

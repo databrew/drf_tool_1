@@ -79,52 +79,62 @@ ui <- dashboardPage(skin = 'blue',
                                 br()), # end tabItem
                         
                         tabItem(tabName = 'stats',
-                                fluidRow(
-                                  column(4, 
-                                         radioButtons('data_type',
-                                                      'Data type',
-                                                      choices = c('Total damage', 'Cost per person'),
-                                                      selected = 'Total damage')),
-                                  column(4,
-                                         uiOutput('cost_per_person'))
-                                ),
-                                fluidRow(
-                                  column(4, 
-                                         selectInput('region',
-                                                     'Choose a region',
-                                                     choices = regions,
-                                                     selected = regions[1])),
-                                  column(4,
-                                         radioButtons('currency',
-                                                      'Choose a currency',
-                                                      choices = currencies,
-                                                      selected = 'USD'))
-                                ),
-                                fluidRow(
-                                  column(4, 
-                                         uiOutput('code')),
-                                  column(4,
-                                         uiOutput('rate')),
-                                  column(4,
-                                         textOutput('display_rate'))
-                                ),
-                                fluidRow(
-                                  column(4,
-                                         selectInput('dis',
-                                                     'Probability distribution',
-                                                     choices = c('Lognormal', 'Beta', 'Gamma', 
-                                                                 'Frechet', 'Gumbel', 'Weilbull',
-                                                                 'Pareto', 'Poisson', ' Bernoulli'))
-                                  ),
-                                  column(4,
-                                         uiOutput('scaling')),
-                                  column(4,
-                                         uiOutput('detrend'))
-                                ),
-                                fluidRow(
-                                  plotOutput('temp_plot')
-                                )
-                                
+                                column(8,
+                                       fluidRow(
+                                         column(6, 
+                                                radioButtons('data_type',
+                                                             'Data type',
+                                                             choices = c('Total damage', 'Cost per person'),
+                                                             selected = 'Total damage')),
+                                         column(6,
+                                                uiOutput('cost_per_person'))
+                                         
+                                       ),
+                                       fluidRow(
+                                         column(6, 
+                                                selectInput('region',
+                                                            'Choose a region',
+                                                            choices = regions,
+                                                            selected = regions[1])),
+                                         column(6,
+                                                radioButtons('currency',
+                                                             'Choose a currency',
+                                                             choices = currencies,
+                                                             selected = 'USD'))
+                                       ),
+                                       fluidRow(
+                                         column(6, 
+                                                uiOutput('code')),
+                                         column(6,
+                                                uiOutput('rate')),
+                                         column(6,
+                                                textOutput('display_rate'))
+                                       ),
+                                       fluidRow(
+                                         column(6,
+                                                uiOutput('scaling')),
+                                         column(6,
+                                                uiOutput('detrend'))
+                                         
+                                       ),
+                                       fluidRow(
+                                         column(6,
+                                                selectInput('prob_dis',
+                                                            'Conditional loss distribution',
+                                                            choices = c('Lognormal', 'Beta', 'Gamma', 
+                                                                        'Frechet', 'Gumbel', 'Weilbull',
+                                                                        'Pareto', 'Poisson', ' Bernoulli'))
+                                         ),
+                                         column(6,
+                                                selectInput('frequency',
+                                                            'Frequency of event distribution',
+                                                            choices = c('Bernoulli',
+                                                                        'Poisson')))
+                                       )
+                                      ),
+                                column(4, 
+                                       plotOutput('advanced_detrend_plot'))
+
                         ),
                         tabItem(tabName = 'parameters',
                                 h2("Financial Strategy"),
@@ -275,6 +285,17 @@ ui <- dashboardPage(skin = 'blue',
 
 server <- function(input, output) {
   
+  # placeholders
+  region_name <- 'Punjab'
+  data <- popn.data[popn.data$Region == region_name,]
+  data$scaling_factor <- data$Population[1]/data$Population
+  data <- inner_join(data, archetype.data, by = 'Year')
+  data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
+  p_value <- trend.test(data$scaled_loss,plot = FALSE) # i
+  p_value <- p_value$p.value
+  
+  
+  
   # create a reactive data set to select region
   pop_data <- reactive({
     region_name <- input$region
@@ -290,23 +311,83 @@ server <- function(input, output) {
     # current pop/histic pop in year i, where i represents each of the years prior to the current population in the modelled time horizon.
     # The current pop is defined as the most recent population figure available in the Tool or entered by the user.
     data$scaling_factor <- data$Population[1]/data$Population
-
+    
     # Multiply the original loss data value by the respective scaling factor based on the year the loss data value is from.
     # join peril data with data
     data <- inner_join(data, archetype.data, by = 'Year')
     data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
+    return(data)
     
   })
   
   # LINEAR DETRENDING: The user is able to linearly detrend the loss data to retrospectively correct any 
   # linear trend in the data by adjusting past values.
-  # create a reactive dataset to further detrend (advanced settings)
+  # create a reactive dataset to further detrend (advanced settings) after scaling has already been applied
+  # Right now just by population, but will eventually be by GDP and inflation
+  advanced_detrend_p_value <- reactive({
+    # get subsetted (by region) and scaled data 
+    scaled_data <- scale_by_pop()
+    
+    # test for any remaining trend in the scaled loss (this time scaled by population, 
+    # but can do GDP and inflation too) 
+    # Stuck here and will ask about further detrending with t test.
+    # in the meantime use cox stuart detrending to get p value.
+    p_value <- trend.test(scaled_data$scaled_loss,plot = FALSE) # i
+    p_value <- p_value$p.value
+    return(p_value)
+  })
+  
+  # create a reactive object that tests for the best fit (aic) distribution for the loss data
+  # The basic user will not see this, only the advanced user
+  loss_aic <- reactive({
+    # will have other options for different scales later
+    loss_data <- scale_by_pop()
+  })
   
   
-  # create a temporary plot to check if reactive values work 
-  output$temp_plot <- renderPlot({
-    temp <- pop_data()
-    plot(temp$Year, temp$Population)
+  
+  # create plot with p value for advanced users who also selected further linear scaling (detrend)
+  output$advanced_detrend_plot <- renderPlot({
+    
+    # if user choses advanced settings AND wants to test for further detrending, then show plot, else 
+    # keep null
+    advanced <- input$advanced
+    detrend <- input$detrend
+    print(detrend)
+    print(advanced)
+    if(is.null(detrend)){
+      return(NULL)
+    } else {
+      if(!advanced | !detrend){
+        return(NULL)
+      } else {
+        # get scaled data
+        data <- scale_by_pop()
+        
+        # get p value from cox test
+        p_value <- advanced_detrend_p_value()
+        p_value <- round(p_value, 2)
+        
+        # set condition for if p value is greater than 0.05, no need to detrend further
+        if(p_value <= 0.05) {
+          p_value_message <- 'statistically significant trend still exists'
+        } else {
+          p_value_message <- 'no further detrending necessary'
+        }
+        data$Year <- as.numeric(data$Year)
+        p <- ggplot(data, aes(Year, scaled_loss)) + 
+          geom_point(size = 2) +
+          geom_line() + 
+          labs(x = 'Year',
+               y = 'Scaled loss',
+               subtitle = paste0('The p value for the Cox Stuart trend test is ', p_value, ' = ', 
+                                 p_value_message)) +
+          theme_economist_white()
+        return(p)
+      }
+      
+    }
+    
   })
   
   
@@ -316,11 +397,11 @@ server <- function(input, output) {
       NULL
     } else {
       numericInput('cost_per_person',
-                'Enter coster per person USD', 
-                min = 0,
-                max = 1000,
-                step = 10,
-                value = 50)
+                   'Enter coster per person USD', 
+                   min = 0,
+                   max = 1000,
+                   step = 10,
+                   value = 50)
     }
   })
   
@@ -330,9 +411,9 @@ server <- function(input, output) {
       NULL
     } else {
       selectInput('code',
-                 'Choose a currency code', 
-                 choices = other_currencies, 
-                 selected = NULL)
+                  'Choose a currency code', 
+                  choices = other_currencies, 
+                  selected = NULL)
     }
   })
   
@@ -353,11 +434,11 @@ server <- function(input, output) {
       return(NULL) 
     } else {
       numericInput('rate',
-                  'Enter conversion rate',
-                  min = 0,
-                  max = 100,
-                  step = 1,
-                  value = 1)
+                   'Enter conversion rate',
+                   min = 0,
+                   max = 100,
+                   step = 1,
+                   value = 1)
     }
   })
   
@@ -377,22 +458,18 @@ server <- function(input, output) {
   })
   
   # create a uioutput for when advanced setting is chosen and the user and detrend data 
-  #  HERE is where we are - this should give p value for any existing trend after population scaling and have an option
-  # to apply it. ALSO make sure detrending ends with mean = 0, as investopida implies...
+  #  HERE is where we are - this should give p value for any existing trend after population scaling 
+  # and have an option to apply it. ALSO make sure detrending ends with mean = 0, as investopida implies...
   output$detrend <- renderUI({
     if(!input$advanced){
       NULL
     } else {
       checkboxInput('detrend',
-                    'Perform linear detrending',
+                    'Perform further linear detrending',
                     value= FALSE)
     }
     
   })
-  
-  
-   
-
   
   observeEvent(input$paramdefs, {
     showModal(modalDialog(
