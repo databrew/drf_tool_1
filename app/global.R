@@ -21,12 +21,23 @@ simulation.data <- read.csv("../lib/RD_NNDISSimulatedLossProfile.csv",header=TRU
 source("../lib/cost_benefit_calculations_upd.R")
 source("../lib/functions.R")
 
+# confirm the data sets have correct variable types 
+popn.data$Region <- as.factor(popn.data$Region)
+popn.data$Year <- as.factor(popn.data$Year)
+archetype.data$Peril <- as.factor(archetype.data$Peril)
+archetype.data$Year <- as.factor(archetype.data$Year)
+
+
 # define a vector of countries and currencies to be used in the dropdown (add more later)
-countries <- c('Sri Lanka')
+regions <- unique(popn.data$Region)
 currencies <- c('USD', 'Other')
 
 # create a placeholer for other currency codes
 other_currencies <- c('EUR', 'CNY')
 
-# LINEAR DETRENDING: The user is able to linearly detrend the loss data to retrospectively correct any 
-# linear trend in the data by adjusting past values.
+
+
+
+
+# PARAMETRIC DISTRIBUTION: The user gets a default distribution but can chose from others (historical data)
+

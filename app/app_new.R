@@ -90,10 +90,10 @@ ui <- dashboardPage(skin = 'blue',
                                 ),
                                 fluidRow(
                                   column(4, 
-                                         selectInput('country',
-                                                     'Choose a country',
-                                                     choices = countries,
-                                                     selected = 'Sri Lanka')),
+                                         selectInput('region',
+                                                     'Choose a region',
+                                                     choices = regions,
+                                                     selected = regions[1])),
                                   column(4,
                                          radioButtons('currency',
                                                       'Choose a currency',
@@ -110,24 +110,19 @@ ui <- dashboardPage(skin = 'blue',
                                 ),
                                 fluidRow(
                                   column(4,
-                                         selectInput('scaling',
-                                                     'Scale by',
-                                                     choices = c('Population', 
-                                                                 'GDP',
-                                                                 'Inflation'),
-                                                     selected = 'Population')),
-                                  column(4,
-                                         selectInput('detrend',
-                                                     'Perform linear detrending',
-                                                     choices = c('Yes', 'No'))
-                                  ),
-                                  column(4,
                                          selectInput('dis',
                                                      'Probability distribution',
                                                      choices = c('Lognormal', 'Beta', 'Gamma', 
                                                                  'Frechet', 'Gumbel', 'Weilbull',
                                                                  'Pareto', 'Poisson', ' Bernoulli'))
-                                  )
+                                  ),
+                                  column(4,
+                                         uiOutput('scaling')),
+                                  column(4,
+                                         uiOutput('detrend'))
+                                ),
+                                fluidRow(
+                                  plotOutput('temp_plot')
                                 )
                                 
                         ),
@@ -280,6 +275,41 @@ ui <- dashboardPage(skin = 'blue',
 
 server <- function(input, output) {
   
+  # create a reactive data set to select region
+  pop_data <- reactive({
+    region_name <- input$region
+    region_pop <- popn.data[popn.data$Region == region_name,]
+  })
+  
+  # create a reactive dataset for scaled by population, gdp growth (advanced settings), or inflation (advanced settings)
+  # calculate the scaling factors for each historic year relative to the most recent population figure using the formula:
+  scale_by_pop <- reactive({
+    # get data from reactive data subsetted by region above
+    data <- pop_data()
+    
+    # current pop/histic pop in year i, where i represents each of the years prior to the current population in the modelled time horizon.
+    # The current pop is defined as the most recent population figure available in the Tool or entered by the user.
+    data$scaling_factor <- data$Population[1]/data$Population
+
+    # Multiply the original loss data value by the respective scaling factor based on the year the loss data value is from.
+    # join peril data with data
+    data <- inner_join(data, archetype.data, by = 'Year')
+    data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
+    
+  })
+  
+  # LINEAR DETRENDING: The user is able to linearly detrend the loss data to retrospectively correct any 
+  # linear trend in the data by adjusting past values.
+  # create a reactive dataset to further detrend (advanced settings)
+  
+  
+  # create a temporary plot to check if reactive values work 
+  output$temp_plot <- renderPlot({
+    temp <- pop_data()
+    plot(temp$Year, temp$Population)
+  })
+  
+  
   # create a uioutput for when data type == cost per person
   output$cost_per_person <- renderUI({
     if(input$data_type != 'Cost per person'){
@@ -331,6 +361,37 @@ server <- function(input, output) {
     }
   })
   
+  # create a uiOutput to show scaling options advanced version is chosen (input$advanced)
+  output$scaling <- renderUI({
+    if(!input$advanced){
+      NULL
+    } else {
+      selectInput('scaling',
+                  'Scale by',
+                  choices = c('Population', 
+                              'GDP',
+                              'Inflation'),
+                  selected = 'Population')
+    }
+    
+  })
+  
+  # create a uioutput for when advanced setting is chosen and the user and detrend data 
+  #  HERE is where we are - this should give p value for any existing trend after population scaling and have an option
+  # to apply it. ALSO make sure detrending ends with mean = 0, as investopida implies...
+  output$detrend <- renderUI({
+    if(!input$advanced){
+      NULL
+    } else {
+      checkboxInput('detrend',
+                    'Perform linear detrending',
+                    value= FALSE)
+    }
+    
+  })
+  
+  
+   
 
   
   observeEvent(input$paramdefs, {
