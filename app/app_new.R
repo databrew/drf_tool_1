@@ -284,38 +284,38 @@ ui <- dashboardPage(skin = 'blue',
                         )
 
 server <- function(input, output) {
-  
-  # placeholders
-  region_name <- '3 Region Total'
-  data <- popn.data[popn.data$Region == region_name,]
-  data <- data[order(data$Year, decreasing = TRUE),]
-  data$scaling_factor <- data$Population[1]/data$Population
-  data <- left_join(data, archetype.data, by = 'Year')
-  data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
-  p_value <- trend.test(data$scaled_loss,plot = FALSE) # i
-  p_value <- p_value$p.value
-  
-  # temporarily do simulation 
-  data <- data[complete.cases(data),]
-  # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-  # get trials max year minus min year
-  num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
-  num_trials <- num_trials + 1
-  mle_bern <- sum(nrow(data)/num_trials)
-  uniform_dis <- runif(1000, 0, 1)
-  sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
-  # create a variable to show success (mle?uniform_dis, then success)
-  sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
-  
-  # temporary code for fitting distribution to the loss data
-  x <- data$Total_NNDIS_Losses
-  weibull <- fitdistr(x, "weibull")
-  weibull_aic <- AIC(weibull)
-  lognormal <- fitdistr(x, "lognormal")
-  gamma <- fitdistr(x, "gamma")
-  
-  
-  
+  # 
+  # # placeholders
+  # region_name <- '3 Region Total'
+  # data <- popn.data[popn.data$Region == region_name,]
+  # data <- data[order(data$Year, decreasing = TRUE),]
+  # data$scaling_factor <- data$Population[1]/data$Population
+  # data <- left_join(data, archetype.data, by = 'Year')
+  # data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
+  # p_value <- trend.test(data$scaled_loss,plot = FALSE) # i
+  # p_value <- p_value$p.value
+  # 
+  # # temporarily do simulation 
+  # data <- data[complete.cases(data),]
+  # # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+  # # get trials max year minus min year
+  # num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
+  # num_trials <- num_trials + 1
+  # mle_bern <- sum(nrow(data)/num_trials)
+  # uniform_dis <- runif(1000, 0, 1)
+  # sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+  # # create a variable to show success (mle?uniform_dis, then success)
+  # sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
+  # 
+  # # temporary code for fitting distribution to the loss data
+  # x <- data$Total_NNDIS_Losses
+  # weibull <- fitdistr(x, "weibull")
+  # weibull_aic <- AIC(weibull)
+  # lognormal <- fitdistr(x, "lognormal")
+  # gamma <- fitdistr(x, "gamma")
+  # 
+  # 
+  # 
   
   # create a reactive data set to select region
   pop_data <- reactive({
