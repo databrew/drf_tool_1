@@ -1,3 +1,5 @@
+library(databrew)
+
 ## Other functions for the tool
 
 
@@ -165,6 +167,7 @@ build.cba.plot.array <- function(cost.benefit.percentiles1,cost.benefit.percenti
 
 # create plot to visualize population data
 plot_pop <- function(temp_dat){
+  temp_dat$Year <- as.numeric(as.character(temp_dat$Year))
   p <- ggplot(temp_dat, aes(Year, Population, color = Region)) +
     geom_line(alpha = 0.6, size = 2) +
     scale_color_manual(name = '',
@@ -173,7 +176,8 @@ plot_pop <- function(temp_dat){
     labs(x="Year", 
          y="Population",
          title= 'Population by year') +
-    theme_economist_white()
+    theme_databrew() +
+    theme(legend.text = element_text(size = 6))
   return(p)
 }
 
@@ -188,7 +192,7 @@ plot_archetype<- function(temp_dat, region){
     labs(x="Year", 
          y="Total NNDIS Loss (LKR, millions)",
          title=paste("Burning cost losses for ",region, sep='')) +
-    theme_economist_white()
+    theme_databrew()
   return(p)
 }
 
@@ -200,7 +204,7 @@ plot_sim <- function(temp_dat){
          y="Frequency",
          title='Distribution of simulated loss',
          subtitle = '10k simulations') +
-    theme_economist_white()
+    theme_databrew()
   return(p)
 }
 

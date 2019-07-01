@@ -18,11 +18,11 @@ library(MASS)
 
 options(scipen=999)
 # Read in population data, historic loss data, and simulated loss profile data
-popn.data <- read.csv("../lib/RD_POP.csv",header=TRUE,stringsAsFactors=F)
-archetype.data <- read.csv("../lib/RD_NNDISHistoricLosses.csv",header=TRUE,stringsAsFactors = F)
-simulation.data <- read.csv("../lib/RD_NNDISSimulatedLossProfile.csv",header=TRUE,stringsAsFactors = F)
-source("../lib/cost_benefit_calculations_upd.R")
-source("../lib/functions.R")
+popn.data <- read.csv("lib/RD_POP.csv",header=TRUE,stringsAsFactors=F)
+archetype.data <- read.csv("lib/RD_NNDISHistoricLosses.csv",header=TRUE,stringsAsFactors = F)
+simulation.data <- read.csv("lib/RD_NNDISSimulatedLossProfile.csv",header=TRUE,stringsAsFactors = F)
+source("lib/cost_benefit_calculations_upd.R")
+source("lib/functions.R")
 
 # confirm the data sets have correct variable types 
 popn.data$Region <- as.factor(popn.data$Region)
