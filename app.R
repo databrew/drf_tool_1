@@ -9,7 +9,7 @@ ui <- dashboardPage(skin = 'blue',
                       sidebarMenu( id = 'menu',
                                    menuItem("Overview", tabName = 'overview', icon = icon('home')),
                                    menuItem("Data", tabName = 'data', icon = icon('table')),
-                                   menuItem("Statistics", tabName = 'stats', icon = icon('bar-chart-o')),
+                                   menuItem("User inputs", tabName = 'stats', icon = icon('bar-chart-o')),
                                    menuItem("Financial Strategy", tabName = 'parameters', icon = icon('coins')),
                                    menuItem("Parameters", tabName = 'cbaparameters', icon = icon('edit')),
                                    menuItem("Output", tabName = 'output', icon = icon('signal')),
@@ -73,7 +73,13 @@ ui <- dashboardPage(skin = 'blue',
                                    .	Historical losses are a good indicator for future experience.
                                    .	The analysis does not allow for future losses to be higher than historical experience as a result of more frequent natural disasters. Further studies could be carried out to understand the potential impact of this.'),
                                 h4('Fitted distribution'),
-                                h5('A statistical distribution has been fitted to the 10 years of losses to extrapolate from the existing data concerning events that have not been observed, and project what potential future losses might be. The analysis uses a methodology called frequency-severity, in which a year of experience for the NNDIS is simulated 10,000 times. In each year, zero, one, or two natural disaster events can occur (this assumption remains a simplification because it excludes the possibility that three or more events could occur). Events occur with a frequency in line with the last 10 years of disasters in Sri Lanka. For each event simulated, the severity (or amount of loss) is generated from thousands of possible values from a statistical distribution that was selected based on the last 10 years of disasters in Sri Lanka. Note that in addition to the assumptions above, these values could reasonably be different if a different statistical distribution had been selected. '),
+                                h5('A statistical distribution has been fitted to the 10 years of losses to extrapolate from the existing data concerning events that 
+                                   have not been observed, and project what potential future losses might be. The analysis uses a methodology called frequency-severity, 
+                                   in which a year of experience for the NNDIS is simulated 10,000 times. In each year, zero, one, or two natural disaster events can occur 
+                                   (this assumption remains a simplification because it excludes the possibility that three or more events could occur). Events occur with a 
+                                   frequency in line with the last 10 years of disasters in Sri Lanka. For each event simulated, the severity (or amount of loss) is generated from 
+                                   thousands of possible values from a statistical distribution that was selected based on the last 10 years of disasters in Sri Lanka. Note that in 
+                                   addition to the assumptions above, these values could reasonably be different if a different statistical distribution had been selected. '),
                                 h3('Calculation methodology'),
                                 h5('The methodology adopted for the analysis of relative cost of different financial strategies is in line with the analysis in the following paper https://hubs.worldbank.org/docs/imagebank/pages/docprofile.aspx?nodeid=26510520'),
                                 br()), # end tabItem
@@ -119,18 +125,14 @@ ui <- dashboardPage(skin = 'blue',
                                        ),
                                        fluidRow(
                                          column(6,
-                                                selectInput('prob_dis',
-                                                            'Conditional loss distribution',
-                                                            choices = c('Lognormal', 'Beta', 'Gamma', 
-                                                                        'Frechet', 'Gumbel', 'Weilbull',
-                                                                        'Pareto', 'Poisson', ' Bernoulli'))
-                                         ),
-                                         column(6,
                                                 selectInput('frequency',
                                                             'Frequency of event distribution',
                                                             choices = c('Bernoulli',
-                                                                        'Poisson')))
-                                       )
+                                                                        'Poisson'))),
+                                         column(6,
+                                                uiOutput('prob_dis'))
+                                         )
+                                       
                                 ),
                                 column(5,
                                        align = 'center',
@@ -256,12 +258,10 @@ ui <- dashboardPage(skin = 'blue',
                                 h2("NNDIS Loss Data"),
                                 br(),
                                 fluidRow(
-                                  column(4,
+                                  column(6,
                                          plotOutput('archetype_plot')),
-                                  column(4,
-                                         plotOutput('pop_plot')),
-                                  column(4,
-                                         plotOutput('sim_plot'))
+                                  column(6,
+                                         plotOutput('pop_plot'))
                                   
                                 ) # end fluid row
                         ), # end tab item
@@ -403,37 +403,114 @@ server <- function(input, output) {
   })
   
   # # The basic user will not see this, only the advanced user
-  # frequency_distribution_poisson <- reactive({
-  #   # will have other options for different scales later
-  #   freq_data <- scale_by_pop()
-  #   # temporarily do simulation 
-  #   freq_data <- freq_data[complete.cases(freq_data),]
+  frequency_distribution_poisson <- reactive({
+    # will have other options for different scales later
+    freq_data <- scale_by_pop()
+  #   # temporarily do simulation
+    freq_data <- freq_data[complete.cases(freq_data),]
   #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
   #   # get trials max year minus min year
-  # 
-  # })
+  #
+  })
+
+  # get log normal aic
+  log_normal_loss_dis <- reactive({
+    
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    log_normal <- fitdistr(data$scaled_loss, "lognormal")
+    log_normal_aic <- AIC(log_normal)
+    
+    return(log_normal_aic)
+
+  })
   
-  # log_normal_loss_dis <- reactive({
-  #   
-  # })
-  # beta_loss_dis <- reactive({
-  #   
-  # })
-  # gamma_loss_dis <- reactive({
-  #   
-  # })
-  # frechet_loss_dis <- reactive({
-  #   
-  # })
-  # gumbel_loss_dis <- reactive({
-  #   
-  # })
-  # weilbull_loss_dis <- reactive({
-  #   
-  # })
-  # pareto_loss_dis <- reactive({
-  #   
-  # })
+  # get beta aic
+  beta_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    beta<- fitdistr(data$scaled_loss, "beta")
+    beta_aic <- AIC(beta)
+    # ISSUE need names list
+    return(beta_aic)
+  })
+  
+  # get gamme aic
+  gamma_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    gamma <- fitdistr(data$scaled_loss, "gamma")
+    gamma_aic <- AIC(gamma)
+    # Error
+    return(gamma_aic)
+
+  })
+  
+  # get frechet aic
+  frechet_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    frechet <- fitdistr(data$scaled_loss, "frechet")
+    frechet_aic <- AIC(frechet)
+    return(frechet_aic)
+
+  })
+  
+  # get gumbel aic
+  gumbel_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    gumbel <- fitdistr(data$scaled_loss, "gumbel")
+    gumbel_aic <- AIC(gumbel)
+    return(gumbel_aic)
+  })
+  
+  # get weilbull aic
+  weilbull_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    weilbull <- fitdistr(data$scaled_loss, "weilbull")
+    weilbull_aic <- AIC(weilbull)
+    return(weilbull_aic)
+
+  })
+  
+  # get pareto aic
+  pareto_loss_dis <- reactive({
+    # get scaled data
+    data <- scale_by_pop
+    
+    # get complete cases
+    data <- data[complete.cases(data),]
+    
+    pareto <- fitdistr(data$scaled_loss, "pareto")
+    pareto_aic <- AIC(pareto)
+    return(pareto)
+  })
 
   
   # make reactive object to compare and find best AIC of parametic distributions
@@ -442,14 +519,13 @@ server <- function(input, output) {
   # "Poisson", "t" and "weibull" are recognised, case being ignored.
   best_loss_dis <- reactive({
     # will have other options for different scales later
-    loss_data <- scale_by_pop()
-    # temporary code for fitting distribution to the loss loss_data
-    x <- loss_data$Total_NNDIS_Losses
-    weibull <- fitdistr(x, "weibull")
-    weibull_aic <- AIC(weibull)
-    lognormal <- fitdistr(x, "lognormal")
-    lognormal_aic <- AIC(lognormal)
-    gamma <- fitdistr(x, "gamma")
+    pareto_aic <- pareto_loss_dis()
+    weilbull_aic <- weilbull_loss_dis()
+    log_normal_aic <- log_normal_loss_dis()
+    beta_aic <- beta_loss_dis()
+    frechet_aic <- frechet_loss_dis()
+    gamma_aic <- gamme_loss_dis()
+    gumbel_aic <- gumbel_loss_dis
   })
   
   # create reactive object for each frequency and loss distribution
@@ -579,6 +655,21 @@ server <- function(input, output) {
     
   })
   
+  # create a uioutput for selecting conditional loss distribution if advanced user
+  output$prob_dis <- renderUI({
+    if(!input$advanced){
+      NULL
+    } else {
+      selectInput('prob_dis',
+                  'Conditional loss distribution',
+                  choices = c('Lognormal', 'Beta', 'Gamma', 
+                              'Frechet', 'Gumbel', 'Weilbull',
+                              'Pareto', 'Poisson', ' Bernoulli'))
+    }
+    
+  })
+  
+
   
   
   observeEvent(input$paramdefs, {
@@ -886,8 +977,7 @@ server <- function(input, output) {
                  switcher(TRUE)
                  sim.losses <- simulation.data$SimulatedNNDISLoss*1000000*scale.up/isolate(nndis.factor())
                  showNotification("Running Tool")
-                 sim.losses <- simulation.data$SimulatedNNDISLoss*1000000*100/isolate(2.5)
-                 
+
                  ## ========================================== ##
                  ## Strategy A & B & C                         ##
                  ## ========================================== ##
