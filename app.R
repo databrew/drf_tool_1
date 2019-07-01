@@ -22,12 +22,12 @@ ui <- dashboardPage(skin = 'blue',
                                        textInput('nndisfac',label= 'NNDIS Factor (%)', value = "2.5", width = "60%")) 
                     ),
                     dashboardBody( 
-                      tags$head(tags$style(HTML('
-                                                /* body */
-                                                .content-wrapper, .right-side {
-                                                background-color: #FFFFFF;
-                                                }'))),
-          
+                      # tags$head(tags$style(HTML('
+                      #                           /* body */
+                      #                           .content-wrapper, .right-side {
+                      #                           background-color: #FFFFFF;
+                      #                           }'))),
+                      
                       
                       tabItems( 
                         tabItem(tabName = 'overview',
@@ -79,7 +79,7 @@ ui <- dashboardPage(skin = 'blue',
                                 br()), # end tabItem
                         
                         tabItem(tabName = 'stats',
-                                column(8,
+                                column(7,
                                        fluidRow(
                                          column(6, 
                                                 radioButtons('data_type',
@@ -131,10 +131,11 @@ ui <- dashboardPage(skin = 'blue',
                                                             choices = c('Bernoulli',
                                                                         'Poisson')))
                                        )
-                                      ),
-                                column(4, 
+                                ),
+                                column(5,
+                                       align = 'center',
                                        plotOutput('advanced_detrend_plot'))
-
+                                
                         ),
                         tabItem(tabName = 'parameters',
                                 h2("Financial Strategy"),
@@ -211,45 +212,55 @@ ui <- dashboardPage(skin = 'blue',
                                 ))), # end box, column, tabItem
                         
                         tabItem(tabName = 'cbaparameters',
-                                h2("Parameters"),   
-                                h5('Edit the indicative assumptions below, percentages should be input as decimals'),
-                                circleButton('defs', icon = icon('info'), status = "default",
-                                             size = "sm", style = "color: #fff;background-color: #337ab7; border-color: #2e6da4"),
-                                br(),
-                                br(),
-                                box( width = 10, title = '4. Cost-Benefit Parameters', status  = 'primary', solidHeader = T,
-                                     column(6,
-                                            DTOutput('cbparams'),
-                                            br(),
-                                            br(),
-                                            br(),
-                                            DTOutput('cbparamsreserve'),
-                                            br(),
-                                            br(),
-                                            DTOutput('cbparamsccredit')
-                                     ),
-                                     
-                                     column(6,
-                                            DTOutput('cbparamsborrowing'),
-                                            br(),
-                                            br(),
-                                            DTOutput('cbparamsins'),
-                                            br(),
-                                            br(),
-                                            DTOutput('cbparamsbudget')
-                                     ))),   # end tab item
+                                fluidRow(
+                                  column(3,
+                                         h2("Parameters")),
+                                  column(9,
+                                         circleButton('defs', icon = icon('info'), status = "default",
+                                                      # style = "color: #fff;background-color: #337ab7; border-color: #2e6da4",
+                                                      size = "sm")
+                                  )
+                                ),
+                                fluidRow(
+                                  column(12,
+                                         h5('Edit the indicative assumptions below, percentages should be input as decimals'))
+                                ),
+                                box( width = 12, 
+                                     title = '4. Cost-Benefit Parameters', 
+                                     status  = 'primary', solidHeader = T,
+                                     fluidRow(
+                                       column(6,
+                                              DTOutput('cbparams'),
+                                              # br(),
+                                              # br(),
+                                              # br(),
+                                              DTOutput('cbparamsreserve'),
+                                              # br(),
+                                              # br(),
+                                              DTOutput('cbparamsccredit')
+                                       ),
+                                       
+                                       column(6,
+                                              DTOutput('cbparamsborrowing'),
+                                              # br(),
+                                              # br(),
+                                              DTOutput('cbparamsins'),
+                                              # br(),
+                                              # br(),
+                                              DTOutput('cbparamsbudget')
+                                       )
+                                     ))
+                                
+                        ),   # end tab item
                         tabItem(tabName = 'data',
                                 h2("NNDIS Loss Data"),
                                 br(),
                                 fluidRow(
                                   column(4,
-                                         offset = 1,
                                          plotOutput('archetype_plot')),
                                   column(4,
-                                         offset = 1,
                                          plotOutput('pop_plot')),
                                   column(4,
-                                         offset = 1,
                                          plotOutput('sim_plot'))
                                   
                                 ) # end fluid row
@@ -257,24 +268,37 @@ ui <- dashboardPage(skin = 'blue',
                         
                         tabItem(tabName = 'output',
                                 fluidRow( 
-                                  column(5, offset = 1,
-                                         box(width = 12, height = 400, title = "Exceedance loss curve", status = 'primary', solidHeader = T,
+                                  column(10, offset = 1,
+                                         box(width = 12, 
+                                             # height = 400, 
+                                             title = "Exceedance loss curve", 
+                                             status = 'primary', 
+                                             solidHeader = T,
                                              h5('This chart shows the extent of the total annual loss (y-axis) from natural disasters with varying probabilities (x-axis). For example, the loss at the 50% level is the total loss in a year which is expected to be exceeded once in every two years. Similarly, the loss at the 10% level is the total loss in a year which is expected to be exceeded once in every ten years. It is important to note that losses may occur more or less frequently than implied by this analysis, especially over the short term, due to the uncertain nature of natural disasters. The information shown is also heavily dependent on historical data and the methodology used (shown in the methodology tab) - other views of risk may also be valid, and so other sources of data, such as risk models, should be also considered.'),
-                                             plotOutput('exceedanceplot'))),
-                                  column(5, 
-                                         box(width = 12, height = 400, title = 'Table - relative cost of each DRF strategies under different loss scenarios', status = 'primary', solidHeader = T,
-                                             h5('The table below shows the relative cost of each financing strategy for a year. For each strategy, costs are given on an average basis, but also under increasingly severe loss years. For example, 1 in 50 represent a year with losses which would only be expected to be exceeded once in every 50 years (note that this is not an attempt to forecast losses into the future, rather a way of communicating how likely a certain level of losses is for the next year). The values in this table allow for the relative efficiency of different sources of finance for different costs. For example, holding money in a contingency fund may be effective for frequently observed losses, but holding money beyond the level needed to fund such losses will come with a cost of not using the resources for other projects and so may be less effective for extreme years. Key assumptions, to be discussed with World Bank technical advisors in conjunction with Government financial specialists, are contained in the Paramters sheet. '),
-                                             DTOutput('oppcosttable')))),
+                                             uiOutput('ui_exceedanceplot')))),
+                                fluidRow(column(10, 
+                                                offset = 1,
+                                                box(width = 12, 
+                                                    # height = 400, 
+                                                    title = 'Table - relative cost of each DRF strategies under different loss scenarios', status = 'primary', solidHeader = T,
+                                                    h5('The table below shows the relative cost of each financing strategy for a year. For each strategy, costs are given on an average basis, but also under increasingly severe loss years. For example, 1 in 50 represent a year with losses which would only be expected to be exceeded once in every 50 years (note that this is not an attempt to forecast losses into the future, rather a way of communicating how likely a certain level of losses is for the next year). The values in this table allow for the relative efficiency of different sources of finance for different costs. For example, holding money in a contingency fund may be effective for frequently observed losses, but holding money beyond the level needed to fund such losses will come with a cost of not using the resources for other projects and so may be less effective for extreme years. Key assumptions, to be discussed with World Bank technical advisors in conjunction with Government financial specialists, are contained in the Paramters sheet. '),
+                                                    uiOutput('ui_oppcosttable')))),
                                 fluidRow(
-                                  column(5, offset = 1,
-                                         box(width = 12, height = 400, title = 'Breakdown of loss funded by each funding source', status = 'primary', solidHeader = T,
-                                             h5('This chart shows how annual losses would be financed by different financial instruments under different severities of loss. Note that this is not the cost of financial instruments as is shown in the chart to the right. For example, the amount financed by insurance is the insurance payout in a given year, not the insurance premium (which is what is considered in the chart showing the cost).'),
-                                             plotOutput('financialplot'))),
-                                  column(5,
-                                         box(width= 12, height = 400, title = 'Chart - relative cost of each DRF strategy under different loss scenarios',
+                                  column(10,
+                                         offset = 1,
+                                         box(width= 12, 
+                                             #height = 400, 
+                                             title = 'Chart - relative cost of each DRF strategy under different loss scenarios',
                                              status = 'primary', solidHeader = T,
                                              h5('This chart communicates the same information as is contained in the table above, but in pictoral format for ease of comparison of strategies.'),
-                                             plotOutput('oppcostplot'))))
+                                             uiOutput('ui_oppcostplot')))),
+                                fluidRow(
+                                  column(10, offset = 1,
+                                         box(width = 12, 
+                                             # height = 400, 
+                                             title = 'Breakdown of loss funded by each funding source', status = 'primary', solidHeader = T,
+                                             h5('This chart shows how annual losses would be financed by different financial instruments under different severities of loss. Note that this is not the cost of financial instruments as is shown in the chart to the right. For example, the amount financed by insurance is the insurance payout in a given year, not the insurance premium (which is what is considered in the chart showing the cost).'),
+                                             uiOutput('ui_financialplot'))))
                                 
                         ) # end tab item
                         
@@ -380,9 +404,9 @@ server <- function(input, output) {
           geom_line() + 
           labs(x = 'Year',
                y = 'Scaled loss',
-               subtitle = paste0('The p value for the Cox Stuart trend test is ', p_value, ' = ', 
+               subtitle = paste0('The P-value for the Cox Stuart trend test is\n', p_value, ' = ', 
                                  p_value_message)) +
-          theme_economist_white()
+          theme_databrew()
         return(p)
       }
       
@@ -768,8 +792,12 @@ server <- function(input, output) {
   param_c = cc[3,1] ## 0.038
   param_h = zz[1,1]
   
+  switcher <- reactiveVal(value = FALSE)
+  
   observeEvent(input$simulate,
                {
+                 # Mark that the simulate button has been pushed
+                 switcher(TRUE)
                  sim.losses <- simulation.data$SimulatedNNDISLoss*1000000*scale.up/isolate(nndis.factor())
                  showNotification("Running Tool")
                  
@@ -868,9 +896,15 @@ server <- function(input, output) {
                  cost_strategy_C_Average <- mean(cost_strategy_C)
                  cost.benefit.percentiles.C <- c(cost_strategy_C_Average,calculate.percentiles(cost_strategy_C,c(0.5,0.8,0.9,0.98,0.99))[c(1,3,4)])
                  
-                 output$exceedanceplot <- renderPlot(plot.peril.exceedance.curve(peril.exceedance.curve), width = 600, height = 300)
-                 output$oppcostplot <- renderPlot(plot.opportunity.cost(build.cba.plot.array(cost.benefit.percentiles.A,cost.benefit.percentiles.B,cost.benefit.percentiles.C)), width = 600, height = 300)
-                 output$financialplot <- renderPlot(plot.financial.strategy(build.plot.array(peril_1234.fin.loss,peril_1234.fin.lossB,peril_1234.fin.lossC)), width = 600, height = 300)
+                 output$exceedanceplot <- renderPlot({
+                   x <- peril.exceedance.curve
+                   message('x is ...')
+                   print(x)
+                   plot.peril.exceedance.curve(
+                     x)
+                 })
+                 output$oppcostplot <- renderPlot(plot.opportunity.cost(build.cba.plot.array(cost.benefit.percentiles.A,cost.benefit.percentiles.B,cost.benefit.percentiles.C)))
+                 output$financialplot <- renderPlot(plot.financial.strategy(build.plot.array(peril_1234.fin.loss,peril_1234.fin.lossB,peril_1234.fin.lossC)))
                  
                  ## Data table output
                  opp.cost.table <- rbind(cost.benefit.percentiles.A,cost.benefit.percentiles.B,cost.benefit.percentiles.C)
@@ -883,7 +917,38 @@ server <- function(input, output) {
                  
                }) # end observe event
   
-  
+  output$ui_exceedanceplot <- renderUI({
+    ss <- switcher()
+    if(ss){
+      plotOutput('exceedanceplot')
+    } else {
+      NULL
+    }
+  })
+  output$ui_oppcosttable <- renderUI({
+    ss <- switcher()
+    if(ss){
+      DTOutput('oppcosttable')
+    } else {
+      NULL
+    }
+  })
+  output$ui_financialplot <- renderUI({
+    ss <- switcher()
+    if(ss){
+      plotOutput('financialplot')
+    } else {
+      NULL
+    }
+  })
+  output$ui_oppcostplot <- renderUI({
+    ss <- switcher()
+    if(ss){
+      plotOutput('oppcostplot')
+    } else {
+      NULL
+    }
+  })
   
   
 } # end server
