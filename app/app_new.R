@@ -359,9 +359,7 @@ server <- function(input, output) {
     p_value <- p_value$p.value
     return(p_value)
   })
-  
-  
-  # create a reactive object that tests for the best fit (aic) distribution for the loss data
+
   # The basic user will not see this, only the advanced user
   frequency_distribution_bernoulli <- reactive({
     # will have other options for different scales later
@@ -370,33 +368,13 @@ server <- function(input, output) {
     freq_data <- freq_data[complete.cases(freq_data),]
     # sum of success (disaster) over sum if trials (years). 6 success in 8 years
     # get trials max year minus min year
-    num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
+    num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
     num_trials <- num_trials + 1
-    mle_bern <- sum(nrow(data)/num_trials)
+    mle_bern <- sum(nrow(freq_data)/num_trials)
     uniform_dis <- runif(1000, 0, 1)
-    sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+    sim_freq_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
     # create a variable to show success (mle?uniform_dis, then success)
-    sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
-    
-    
-  })
-  
-  # The basic user will not see this, only the advanced user
-  frequency_distribution_bernoulli <- reactive({
-    # will have other options for different scales later
-    freq_data <- scale_by_pop()
-    # temporarily do simulation 
-    freq_data <- freq_data[complete.cases(freq_data),]
-    # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-    # get trials max year minus min year
-    num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
-    num_trials <- num_trials + 1
-    mle_bern <- sum(nrow(data)/num_trials)
-    uniform_dis <- runif(1000, 0, 1)
-    sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
-    # create a variable to show success (mle?uniform_dis, then success)
-    sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
-    
+    sim_freq_data$outcome <- ifelse(sim_freq_data$uniform_dis < mle_bern, 'success', 'fail')
     
   })
   
@@ -432,8 +410,12 @@ server <- function(input, output) {
   # pareto_loss_dis <- reactive({
   #   
   # })
+
   
   # make reactive object to compare and find best AIC of parametic distributions
+  # the distr function allows for Distributions "beta", "cauchy", "chi-squared", "exponential", 
+  # "gamma", "geometric", "log-normal", "lognormal", "logistic", "negative binomial", "normal",
+  # "Poisson", "t" and "weibull" are recognised, case being ignored.
   best_loss_dis <- reactive({
     # will have other options for different scales later
     loss_data <- scale_by_pop()
@@ -442,6 +424,7 @@ server <- function(input, output) {
     weibull <- fitdistr(x, "weibull")
     weibull_aic <- AIC(weibull)
     lognormal <- fitdistr(x, "lognormal")
+    lognormal_aic <- AIC(lognormal)
     gamma <- fitdistr(x, "gamma")
   })
   
