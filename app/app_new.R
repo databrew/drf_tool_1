@@ -307,7 +307,9 @@ server <- function(input, output) {
   sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
   
   # temporary code for fitting distribution to the loss data
+  x <- data$Total_NNDIS_Losses
   weibull <- fitdistr(x, "weibull")
+  weibull_aic <- AIC(weibull)
   lognormal <- fitdistr(x, "lognormal")
   gamma <- fitdistr(x, "gamma")
   
@@ -359,11 +361,15 @@ server <- function(input, output) {
   
   # create a reactive object that tests for the best fit (aic) distribution for the loss data
   # The basic user will not see this, only the advanced user
-  loss_aic <- reactive({
+  frequency_distribution <- reactive({
     # will have other options for different scales later
     loss_data <- scale_by_pop()
   })
 
+  loss_distribution <- reactive({
+    # will have other options for different scales later
+    loss_data <- scale_by_pop()
+  })
   
   # create plot with p value for advanced users who also selected further linear scaling (detrend)
   output$advanced_detrend_plot <- renderPlot({
