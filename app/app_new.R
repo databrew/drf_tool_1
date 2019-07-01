@@ -294,6 +294,7 @@ server <- function(input, output) {
   data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
   p_value <- trend.test(data$scaled_loss,plot = FALSE) # i
   p_value <- p_value$p.value
+  
   # temporarily do simulation 
   data <- data[complete.cases(data),]
   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
@@ -359,17 +360,92 @@ server <- function(input, output) {
     return(p_value)
   })
   
+  
   # create a reactive object that tests for the best fit (aic) distribution for the loss data
   # The basic user will not see this, only the advanced user
-  frequency_distribution <- reactive({
+  frequency_distribution_bernoulli <- reactive({
+    # will have other options for different scales later
+    freq_data <- scale_by_pop()
+    # temporarily do simulation 
+    freq_data <- freq_data[complete.cases(freq_data),]
+    # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+    # get trials max year minus min year
+    num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
+    num_trials <- num_trials + 1
+    mle_bern <- sum(nrow(data)/num_trials)
+    uniform_dis <- runif(1000, 0, 1)
+    sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+    # create a variable to show success (mle?uniform_dis, then success)
+    sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
+    
+    
+  })
+  
+  # The basic user will not see this, only the advanced user
+  frequency_distribution_bernoulli <- reactive({
+    # will have other options for different scales later
+    freq_data <- scale_by_pop()
+    # temporarily do simulation 
+    freq_data <- freq_data[complete.cases(freq_data),]
+    # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+    # get trials max year minus min year
+    num_trials <- as.numeric(as.character(max(data$Year))) - min(as.numeric(as.character(data$Year)))
+    num_trials <- num_trials + 1
+    mle_bern <- sum(nrow(data)/num_trials)
+    uniform_dis <- runif(1000, 0, 1)
+    sim_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+    # create a variable to show success (mle?uniform_dis, then success)
+    sim_data$outcome <- ifelse(sim_data$uniform_dis < mle_bern, 'success', 'fail')
+    
+    
+  })
+  
+  # # The basic user will not see this, only the advanced user
+  # frequency_distribution_poisson <- reactive({
+  #   # will have other options for different scales later
+  #   freq_data <- scale_by_pop()
+  #   # temporarily do simulation 
+  #   freq_data <- freq_data[complete.cases(freq_data),]
+  #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+  #   # get trials max year minus min year
+  # 
+  # })
+  
+  # log_normal_loss_dis <- reactive({
+  #   
+  # })
+  # beta_loss_dis <- reactive({
+  #   
+  # })
+  # gamma_loss_dis <- reactive({
+  #   
+  # })
+  # frechet_loss_dis <- reactive({
+  #   
+  # })
+  # gumbel_loss_dis <- reactive({
+  #   
+  # })
+  # weilbull_loss_dis <- reactive({
+  #   
+  # })
+  # pareto_loss_dis <- reactive({
+  #   
+  # })
+  
+  # make reactive object to compare and find best AIC of parametic distributions
+  best_loss_dis <- reactive({
     # will have other options for different scales later
     loss_data <- scale_by_pop()
+    # temporary code for fitting distribution to the loss loss_data
+    x <- loss_data$Total_NNDIS_Losses
+    weibull <- fitdistr(x, "weibull")
+    weibull_aic <- AIC(weibull)
+    lognormal <- fitdistr(x, "lognormal")
+    gamma <- fitdistr(x, "gamma")
   })
-
-  loss_distribution <- reactive({
-    # will have other options for different scales later
-    loss_data <- scale_by_pop()
-  })
+  
+  # create reactive object for each frequency and loss distribution
   
   # create plot with p value for advanced users who also selected further linear scaling (detrend)
   output$advanced_detrend_plot <- renderPlot({
