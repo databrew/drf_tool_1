@@ -13,6 +13,8 @@ library(bsplus)
 library(htmltools)
 library(shinyBS)
 library(aTSA)
+library(MASS)
+
 
 options(scipen=999)
 # Read in population data, historic loss data, and simulated loss profile data
