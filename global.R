@@ -19,19 +19,19 @@ library(reshape2)
 
 options(scipen = '999')
 # read in prepopulated raw data 
-raw_data <- read.csv('raw_data.csv', header = FALSE)
+raw_data <- read.csv('data/raw_data.csv', header = FALSE)
 
 # rename columns
 names(raw_data) <- c('Country', 'Year', 'Peril', 'Loss')
 
 # read in MLE and aic data
-mle_data <- read.csv('mle_output.csv')
-aic_data <- read.csv('aic_dis.csv')
+mle_data <- read.csv('data/mle_output.csv')
+aic_data <- read.csv('data/aic_dis.csv')
 
 # read in output graph data for output (later needs to be created through simulations)
-exhibit_1 <- read.csv('exhibit_1.csv')
-exhibit_2_4 <- read.csv('exhibit_2_4.csv')
-exhibit_3 <- read.csv('exhibit_3.csv')
+exhibit_1 <- read.csv('data/exhibit_1.csv')
+exhibit_2_4 <- read.csv('data/exhibit_2_4.csv')
+exhibit_3 <- read.csv('data/exhibit_3.csv')
 
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
