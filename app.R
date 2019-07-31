@@ -184,37 +184,7 @@ server <- function(input, output) {
   
   # annual loss
   output$annual_loss <- renderPlot({
-    
-    # keep only relevant row
-    dat <- exhibit_1
-    dat <- dat[1,]
-    dat <- melt(dat, id.vars = 'item' )
-    dat$item <- NULL
-    
-    # remove X from variable 
-    dat$variable <- gsub('X1', '1', dat$variable)
-    dat$variable <- gsub('_', ' ', dat$variable)
-    dat$variable <- Hmisc::capitalize(dat$variable)
-    
-    # recode variable so that there is a break in long text
-    dat$variable <- ifelse(grepl('Highest', dat$variable), 
-                           paste0('Highest historical, \n','annual loss 2018'),
-                           ifelse(grepl('recent', dat$variable), 
-                                  paste0('Most recent', '\n','annual loss 2018'), 
-                                  dat$variable))
-    
-    # reoreer vaurablke 
-    dat$variable <- factor(dat$variable, c('Annual avg', '1 in 5 year', 
-                                           '1 in 10 year',
-                                           '1 in 25 year',
-                                           '1 in 50 year',
-                                           '1 in 100 year', 
-                                           'Highest historical, \nannual loss 2018', 
-                                           'Most recent\nannual loss 2018'))
-    
-    
-    
-    
+   
     ggplot(dat, aes(variable, value)) +
       geom_bar(stat = 'identity') +
       labs(x = 'Return period',
