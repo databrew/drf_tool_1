@@ -77,8 +77,8 @@ ui <- dashboardPage(skin = 'blue',
                                          column(6, 
                                                 selectInput('country',
                                                             'Choose a country',
-                                                            choices = country,
-                                                            selected = country[1])),
+                                                            choices = countries,
+                                                            selected = countries[1])),
                                          column(6,
                                                 radioButtons('currency',
                                                              'Choose a currency',
@@ -182,10 +182,15 @@ server <- function(input, output) {
   
  ###  OUTPUT page
   
-  # annual loss
+  # annual loss exhibit 1
   output$annual_loss <- renderPlot({
    
-    ggplot(dat, aes(variable, value)) +
+    a <- afghanistan_data[[5]]
+    m <- malaysia_data[[5]]
+    s <- Senegal_data[[5]]
+    so <- somalia_data[[5]]
+    # get data based on country input
+    ggplot(m, aes(variable, value)) +
       geom_bar(stat = 'identity') +
       labs(x = 'Return period',
            y = 'Estimated annual loss (million USD')+
@@ -196,10 +201,9 @@ server <- function(input, output) {
   })
   
  
+  # exhibit 2
   output$loss_exceedance <- renderPlot({
-    dat <- exhibit_2_4[,c('percent', 'graph')]
-    # scale back to plot data
-    dat$graph <- dat$graph/1000000
+    
     
     # get text vector
     dat$text <- ifelse(dat$graph == 0.0004, 'Largest Loss 2018', NA)
@@ -213,7 +217,7 @@ server <- function(input, output) {
       theme_bw() 
   })
   
-  # annual loss
+  # annual loss (exhibit 3)
   output$annual_loss_gap <- renderPlot({
     
     # keep only relevant row
@@ -238,6 +242,8 @@ server <- function(input, output) {
       theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
     
   })
+  
+  # exhibit 4
   
   output$loss_exceedance_gap <- renderPlot({
     dat <- exhibit_2_4[,c('percent', 'funding_gap')]
