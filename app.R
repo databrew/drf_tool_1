@@ -18,13 +18,6 @@ ui <- dashboardPage(skin = 'blue',
                                    #                  textInput('nndisfac',label= 'NNDIS Factor (%)', value = "2.5", width = "60%")) 
                       )),
                     dashboardBody( 
-                      # tags$head(tags$style(HTML('
-                      #                           /* body */
-                      #                           .content-wrapper, .right-side {
-                      #                           background-color: #FFFFFF;
-                      #                           }'))),
-                      
-                      
                       tabItems( 
                         tabItem(tabName = 'overview',
                                 br(),
@@ -60,7 +53,7 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = 'parameters',
                                 fluidRow(
                                   column(6, 
-                                         radioButtons('amend_upload',
+                                         radioButtons('amend_upload', # option to use preloaded data or amend preloaded data, or upload own data
                                                       'Choose a data source',
                                                       choices = c('Use preloaded data',
                                                                   'Amend preloaded data',
@@ -71,7 +64,7 @@ ui <- dashboardPage(skin = 'blue',
                                 column(7,
                                        fluidRow(
                                          column(6, 
-                                                radioButtons('damage_type',
+                                                radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
                                                              'Data type',
                                                              choices = c('Total damage', 'Cost per person'),
                                                              selected = 'Total damage',
@@ -104,27 +97,24 @@ ui <- dashboardPage(skin = 'blue',
                                            width = 12,
                                          fluidRow(
                                            column(12,
-                                                  DT::dataTableOutput('table_1'))),
+                                                  DT::dataTableOutput('data_table_peril'))), 
                                        
                                        fluidRow(
                                          column(12,
-                                                uiOutput('upload_data'))
+                                                uiOutput('upload_data')) # action button to upload user data
                                        ))
-                                         
-                                       
-                                      
-                                       
+                                  
                                 ),
                                 column(5,
                                        align = 'center',
-                                       plotOutput('advanced_detrend_plot')))
+                                       plotOutput('advanced_detrend_plot'))) # not currently in use
                         ), # end tabItem
                         tabItem(tabName = 'data',
                                 fluidRow(
                                   column(6,
-                                         uiOutput('scaling')),
-                                  column(6,
-                                         uiOutput('detrend'))
+                                         uiOutput('scaling')), # not currently in use
+                                  column(6, 
+                                         uiOutput('detrend')) # not currently in use
                                   
                                 ),
                                 fluidRow(
@@ -132,17 +122,17 @@ ui <- dashboardPage(skin = 'blue',
                                          selectInput('frequency',
                                                      'Frequency of event distribution',
                                                      choices = c('Bernoulli',
-                                                                 'Poisson'))),
+                                                                 'Poisson'))), # basic user and advanced user
                                   column(6,
-                                         uiOutput('prob_dis'))
+                                         uiOutput('prob_dis')) # advanced user only
                                 ),
                                 fluidRow(
                                   br(),
                                   column(12,
-                                         DT::dataTableOutput('mle_table')),
+                                         DT::dataTableOutput('mle_table')), # maximum liklihood estimations for each distribution or the  one chosen.
                                   br(),
                                   column(12, 
-                                         DT::dataTableOutput('aic_table')
+                                         DT::dataTableOutput('aic_table') # AIC scores for each distribution
                                   )
                                 ),
                                 fluidRow(
@@ -158,24 +148,28 @@ ui <- dashboardPage(skin = 'blue',
                              fluidRow(
                                box(title = 'Estimated Average Annual Loss by droughts in Afghanistan', 
                                    width = 6,
-                                   status = 'primary',
+                                   status = 'danger', # success= green, info = lighterblue, warning = orange, 
+                                   solidHeader = TRUE,
                                column(12,
                                       plotOutput('annual_loss'))),
                                box(title = 'Loss Exceedance Curve for droughts in Afghanistan', 
                                    width = 6,
-                                   status = 'primary',
+                                   status = 'danger', # success= green, info = lighterblue, warning = orange, 
+                                   solidHeader = TRUE,
                                column(12,
                                       plotOutput('loss_exceedance')))
                                ),
                              fluidRow(
                                box(title = 'Estimated Avg Annual Loss by droughts in Afghanistan', 
                                    width = 6,
-                                   status = 'primary',
+                                   status = 'danger', # success= green, info = lighterblue, warning = orange, 
+                                   solidHeader = TRUE,
                                    column(12,
                                           plotOutput('annual_loss_gap'))),
                                box(title = 'Loss Exceedance Curve of funding gap for droughts in Afghanistan', 
                                    width = 6,
-                                   status = 'primary',
+                                   status = 'danger', # success= green, info = lighterblue, warning = orange, 
+                                   solidHeader = TRUE,
                                    column(12,
                                           plotOutput('loss_exceedance_gap')))
                              )
@@ -310,7 +304,7 @@ server <- function(input, output) {
   }) 
   
   # create an amendable table for table_1 if input$
-  output$table_1 <- renderDataTable({
+  output$data_table_peril <- renderDataTable({
     amend_upload <- input$amend_upload
     if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
       DT::datatable(raw_data)
