@@ -17,6 +17,7 @@ library(MASS)
 library(databrew)
 library(reshape2)
 
+source('functions.R')
 options(scipen = '999')
 
 countries <- c('Afghanistan', 'Somalia', 'Malaysia', 'Senegal')
@@ -80,18 +81,20 @@ exhibit_1_af$variable <- factor(exhibit_1_af$variable, c('Annual avg', '1 in 5 y
                                                          'Highest historical, \nannual loss 2018', 
                                                          'Most recent\nannual loss 2018'))
 
+# Value for AF should be up to 1200
+
 # get exhibit 2 from combined data
 exhibit_2_4_af <- read.csv('data/Afghanistan/exhibit_2_4.csv')
 exhibit_2_af <- exhibit_2_4_af[,c('percent', 'funding_gap')]
 
 # scale back to plot data
-exhibit_2_af$funding_gap <- exhibit_2_af$funding_gap/1000000
+# exhibit_2_af$funding_gap <- exhibit_2_af$funding_gap/1000000
 
 # get exhibit 4 from combined data
 exhibit_4_af <- exhibit_2_4_af[,c('percent', 'graph')]
 
 # scale back to plot data
-exhibit_4_af$graph <- exhibit_4_af$graph/1000000
+# exhibit_4_af$graph <- exhibit_4_af$graph/1000000
 
 # read in exhibit 3
 exhibit_3_af <- read.csv('data/Afghanistan/exhibit_3.csv')
@@ -103,7 +106,7 @@ exhibit_3_af <- exhibit_3_af[1,]
 names(exhibit_3_af) <- c('Drought', 'Annual Average', 'Severe', 'Extreme')
 exhibit_3_af <- melt(exhibit_3_af, id.vars = 'Drought')
 exhibit_3_af$Drought <- NULL
-exhibit_3_af$value <- exhibit_3_af$value/1000000
+# exhibit_3_af$value <- exhibit_3_af$value/1000000
 
 # read in gamma simulations
 sim_af <- read.csv('data/Afghanistan/gamma_simulations.csv')
@@ -139,6 +142,9 @@ rm(raw_data_af,
 
 # read in prepopulated raw data 
 raw_data_som <- read.csv('data/Somalia/raw_data_all.csv', header = TRUE)
+
+# read in scaled data from tool
+scaled_data_som <- read.csv('data/Somalia/scaled_data_flood.csv', header = TRUE)
 
 # rename columns
 names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
@@ -182,6 +188,8 @@ exhibit_1_som$variable <- factor(exhibit_1_som$variable, c('Annual avg', '1 in 5
 
 exhibit_1_som$value <- exhibit_1_som$value/1000000
 
+# value for senegal should be in billions
+
 # get exhibit 2 from combined data
 exhibit_2_4_som <- read.csv('data/Somalia/exhibit_2_4.csv')
 names(exhibit_2_4_som) <- c('percent', 'drought','drought_1', 'drought_2','drought_3', 'graph', 'funding_gap')
@@ -223,7 +231,8 @@ somalia_data <- list('raw_data_som' = raw_data_som,
                          'exhibit_1_som' = exhibit_1_som,
                          'exhibit_2_som' = exhibit_2_som,
                          'exhibit_3_som' = exhibit_3_som,
-                         'exhibit_4_som' = exhibit_4_som)
+                         'exhibit_4_som' = exhibit_4_som,
+                     'scaled_data_som' = scaled_data_som)
 
 rm(raw_data_som,
    mle_som,
@@ -233,7 +242,8 @@ rm(raw_data_som,
    exhibit_2_som,
    exhibit_3_som,
    exhibit_4_som,
-   exhibit_2_4_som)
+   exhibit_2_4_som,
+   scaled_data_som)
 
 
 
@@ -274,19 +284,21 @@ exhibit_1_malay$variable <- ifelse(grepl('Highest', exhibit_1_malay$variable),
                                         exhibit_1_malay$variable))
 
 # recode to make Annual Average to Annaual avg
-exhibit_1_som$variable <- gsub('Average', 'avg', exhibit_1_som$variable)
+exhibit_1_malay$variable <- gsub('Average', 'avg', exhibit_1_malay$variable)
 
 
 # reoreer vaurablke 
-exhibit_1_som$variable <- factor(exhibit_1_som$variable, c('Long term avg', '1 in 5 Year', 
+exhibit_1_malay$variable <- factor(exhibit_1_malay$variable, c('Long Term avg', '1 in 5 Year', 
                                                            '1 in 10 Year',
                                                            '1 in 25 Year',
                                                            '1 in 50 Year',
                                                            '1 in 100 Year', 
-                                                           'Highest historical, \nannual loss 2018', 
-                                                           'Most recent\nannual loss 2018'))
+                                                           'Highest historical, \nannual loss', 
+                                                           'Most recent\nannual loss'))
 
 exhibit_1_malay$value <- exhibit_1_malay$value/1000000
+
+# value for malaysia shjould be in the 100 thousands
 
 # get exhibit 2 from combined data
 exhibit_2_4_malay <- read.csv('data/Malaysia/exhibit_2_4.csv')
@@ -391,7 +403,7 @@ exhibit_1_sen$variable <- factor(exhibit_1_sen$variable, c('Annual avg', '1 in 5
                                                                'Highest historical, \nannual loss 1992', 
                                                                'Most recent\nannual loss 2018'))
 
-exhibit_1_sen$value <- exhibit_1_sem$value/1000000
+exhibit_1_sen$value <- exhibit_1_sen$value/1000000
 
 # get exhibit 2 from combined data
 exhibit_2_4_sen <- read.csv('data/Senegal/exhibit_2_4.csv')
@@ -419,6 +431,9 @@ exhibit_3_sen <- melt(exhibit_3_sen, id.vars = 'Drought')
 exhibit_3_sen$Drought <- NULL
 exhibit_3_sen$value <- exhibit_3_sen$value/1000000
 
+# value for senegal shjould be in the 100 thousands to millions
+
+
 # read in gamma simulations
 sim_sen <- read.csv('data/Senegal/gamma_simulations.csv')
 
@@ -427,7 +442,7 @@ sim_sen <- as.data.frame(sim_sen[, c('Aggregate.Annual.Cost')])
 names(sim_sen) <- 'aggregate_annual_cost'
 
 # store data in list, starting with raw, mle, aic, simulation, and exhibits 1 through 4
-Senegal_data <- list('raw_data_sen' = raw_data_sen, 
+senegal_data <- list('raw_data_sen' = raw_data_sen, 
                       'mle_sen'= mle_sen,
                       'aic_sen' = aic_sen,
                       'sim_sen' = sim_sen,

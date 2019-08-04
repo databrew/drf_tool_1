@@ -7,8 +7,9 @@ ui <- dashboardPage(skin = 'blue',
                       sidebarMenu( id = 'menu',
                                    menuItem("Overview", tabName = 'overview', icon = icon('home')),
                                    menuItem("Assumptions & Methodology", tabName = 'methodology', icon = icon('info')),
-                                   menuItem("Parameters", tabName = 'parameters', icon = icon('edit')),
+                                   menuItem("User inputs", tabName = 'parameters', icon = icon('edit')),
                                    menuItem("Data", tabName = 'data', icon = icon('table')),
+                                   menuItem("Simulations", tabName = 'simulations', icon = icon('cog')),
                                    menuItem("Output", tabName = 'output', icon = icon('signal')),
                                    actionButton("simulate", "Run Tool", icon('refresh'), style = "color: #fff;background-color: #337ab7; border-color: #2e6da4", width="70%"),
                                    br(),
@@ -111,12 +112,24 @@ ui <- dashboardPage(skin = 'blue',
                         ), # end tabItem
                         tabItem(tabName = 'data',
                                 fluidRow(
+                                  h3('There is currently no data to scale by for the country selected'),
                                   column(6,
                                          uiOutput('scaling')), # not currently in use
                                   column(6, 
                                          uiOutput('detrend')) # not currently in use
                                   
                                 ),
+                                fluidRow(
+                                  box(
+                                    title = 'Data',
+                                    width = 12,
+                                    status = 'primary',
+                                  column(12,
+                                         plotOutput('data_plot'))
+                                ))
+                                ), # end tabItem
+                        
+                        tabItem(tabName = 'simulations',
                                 fluidRow(
                                   column(6,
                                          selectInput('frequency',
@@ -128,31 +141,38 @@ ui <- dashboardPage(skin = 'blue',
                                 ),
                                 fluidRow(
                                   br(),
-                                  column(12,
-                                         DT::dataTableOutput('mle_table')), # maximum liklihood estimations for each distribution or the  one chosen.
-                                  br(),
-                                  column(12, 
-                                         DT::dataTableOutput('aic_table') # AIC scores for each distribution
-                                  )
+                                  column(6,
+                                         box(
+                                           title = 'MLE',
+                                           width = 12,
+                                           status = 'primary',
+                                         DT::dataTableOutput('mle_table'))), # maximum liklihood estimations for each distribution or the  one chosen.
+                                  column(6,
+                                         box(
+                                           title = 'AIC',
+                                           width = 12,
+                                           status = 'primary',
+                                         DT::dataTableOutput('aic_table')))
                                 ),
                                 fluidRow(
-                                  box(
-                                    title = 'Drought Data',
-                                    width = 12,
-                                    status = 'primary',
-                                  column(12,
-                                         plotOutput('data_plot'))
-                                ))
-                                ), # end tabItem
+                                  column(6,
+                                         plotOutput('rag_ratings'))
+                                ),
+                                fluidRow(
+                                  column(6,
+                                         plotOutput('dist_plot')),
+                                  column(6,
+                                         plotOutput('grouped_plot'))
+                                )), # end tab iten
                         tabItem(tabName = 'output', # end tabItem
                              fluidRow(
-                               box(title = 'Estimated Average Annual Loss by droughts in Afghanistan', 
+                               box(title = 'Estimated Average Annual Loss', 
                                    width = 6,
                                    status = 'danger', # success= green, info = lighterblue, warning = orange, 
                                    solidHeader = TRUE,
                                column(12,
                                       plotOutput('annual_loss'))),
-                               box(title = 'Loss Exceedance Curve for droughts in Afghanistan', 
+                               box(title = 'Loss Exceedance Curve', 
                                    width = 6,
                                    status = 'danger', # success= green, info = lighterblue, warning = orange, 
                                    solidHeader = TRUE,
@@ -160,13 +180,13 @@ ui <- dashboardPage(skin = 'blue',
                                       plotOutput('loss_exceedance')))
                                ),
                              fluidRow(
-                               box(title = 'Estimated Avg Annual Loss by droughts in Afghanistan', 
+                               box(title = 'Estimated Avg Annual Loss', 
                                    width = 6,
                                    status = 'danger', # success= green, info = lighterblue, warning = orange, 
                                    solidHeader = TRUE,
                                    column(12,
                                           plotOutput('annual_loss_gap'))),
-                               box(title = 'Loss Exceedance Curve of funding gap for droughts in Afghanistan', 
+                               box(title = 'Loss Exceedance Curve of funding gap', 
                                    width = 6,
                                    status = 'danger', # success= green, info = lighterblue, warning = orange, 
                                    solidHeader = TRUE,
@@ -182,20 +202,39 @@ server <- function(input, output) {
   
  ###  OUTPUT page
   
+  # get a reactive object that selects country data (list) based on imput
+  selected_country <- reactive({
+    
+    country_name <- input$country
+    
+    if(country_name == 'Afghanistan'){
+      data_list <- afghanistan_data
+    } else if (country_name == 'Malaysia'){
+      data_list <- malaysia_data
+    } else if (country_name == 'Senegal'){
+      data_list <- senegal_data
+    } else {
+      data_list <- somalia_data
+    }
+    return(data_list)
+  })
+  
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
    
-    a <- afghanistan_data[[5]]
-    m <- malaysia_data[[5]]
-    s <- Senegal_data[[5]]
-    so <- somalia_data[[5]]
-    # get data based on country input
-    ggplot(m, aes(variable, value)) +
-      geom_bar(stat = 'identity') +
-      labs(x = 'Return period',
-           y = 'Estimated annual loss (million USD')+
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+    # a <- afghanistan_data[[5]]
+    # m <- malaysia_data[[5]]
+    # s <- Senegal_data[[5]]
+    # so <- somalia_data[[5]]
+    
+    plot_title <- input$country
+    data_list <- selected_country()
+    dat <- data_list[[5]]
+    plot_bar(temp_dat = dat, 
+             bar_color = 'black', 
+             border_color = 'black', 
+             alpha = 0.8,
+             plot_title = plot_title)
       
     
   })
@@ -204,85 +243,81 @@ server <- function(input, output) {
   # exhibit 2
   output$loss_exceedance <- renderPlot({
     
-    
-    # get text vector
-    dat$text <- ifelse(dat$graph == 0.0004, 'Largest Loss 2018', NA)
-    
-    ggplot(dat, aes(-percent, graph)) +
-      geom_line(size = 1.5, color = 'blue') +
-      labs(x = 'Probability of Exceeding Loss',
-           y = 'Value of loss (million USD)',
-           caption = 'dotted line represents largest loss 2018') +
-      geom_hline(yintercept  = 0.0004, linetype= 2) + 
-      theme_bw() 
+    data_list <- selected_country()
+    dat <- data_list[[8]]
+    plot_title <- input$country
+    plot_line(temp_dat = dat, 
+              line_color = 'black', 
+              line_size = 2, 
+              alpha = 0.7, 
+              exhibit_2 = TRUE, 
+              plot_title = plot_title)
   })
   
   # annual loss (exhibit 3)
   output$annual_loss_gap <- renderPlot({
+    plot_title <- input$country
     
-    # keep only relevant row
-    dat <- exhibit_3
-    
-    # clean data
-    dat <- dat[1,]
-    
-    # rescale 
-    names(dat) <- c('Drought', 'Annual Average', 'Severe', 'Extreme')
-    dat <- melt(dat, id.vars = 'Drought')
-    dat$Drought <- NULL
-    dat$value <- dat$value/1000000
-    
-    # plot
-    ggplot(dat, aes(variable, value)) +
-      geom_bar(stat = 'identity') +
-      labs(x = '',
-           y = 'Estimated potential annual loss (million USD')+
-      theme_bw() +
-      ylim(c(0.000, 0.001)) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+    data_list <- selected_country()
+    dat <- data_list[[7]]
+  
+    plot_bar(temp_dat = dat, 
+             bar_color = 'black', 
+             border_color = 'black', 
+             alpha = 0.8,
+             plot_title = plot_title)
     
   })
   
   # exhibit 4
   
   output$loss_exceedance_gap <- renderPlot({
-    dat <- exhibit_2_4[,c('percent', 'funding_gap')]
-    # scale back to plot data
-    dat$funding_gap <- dat$funding_gap/1000000
+  
+    plot_title <- input$country
+    data_list <- selected_country()
+    dat <- data_list[[6]]
     
-    ggplot(dat, aes(percent, sort(funding_gap))) +
-      geom_line(size = 1.5, color = 'blue') +
-      labs(x = 'Probability of Exceeding Loss',
-           y = 'Funding gap (million USD)') +
-      theme_bw() 
+    plot_line(temp_dat = dat, 
+              line_color = 'black', 
+              line_size = 2, 
+              alpha = 0.7, 
+              exhibit_2 = FALSE, 
+              plot_title = plot_title)
+    
+    
+    
   })
   
   # create table for aic
   output$aic_table <- renderDataTable({
-    advanced <- input$advanced
-    if(!advanced){
-      NULL
-    } else {
-      DT::datatable(aic_data, caption = 'AIC Scores')
+
+      data_list <- selected_country()
+      aic_data <- data_list[[3]]
+      aic_data <- apply(aic_data, 2, function(x) as.numeric(x))
+      aic_data <- apply(aic_data, 2, function(x) round(x, 4))
+      DT::datatable(aic_data, options = list(dom = 't'))
       
-    }
+  
   }) 
   
   # create table for aic
   output$mle_table <- renderDataTable({
-    advanced <- input$advanced
-    if(!advanced){
-      NULL
-    } else {
-      DT::datatable(mle_data, caption = 'MLE')
+    
+      data_list <- selected_country()
+      mle_data <- data_list[[2]]
+      mle_data <- apply(mle_data, 2, function(x) as.numeric(x))
+      mle_data <- apply(mle_data, 2, function(x) round(x, 4))
+      DT::datatable(mle_data, options = list(dom = 't'))
       
-    }
+    
   }) 
   
   # create an amendable table for table_1 if input$
   output$data_table_peril <- renderDataTable({
     amend_upload <- input$amend_upload
     if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
+      data_list <- selected_country()
+      raw_data <- data_list[[1]]
       DT::datatable(raw_data)
     } else {
       NULL
@@ -302,64 +337,75 @@ server <- function(input, output) {
 
   # create a data table  
   output$data_table <- DT::renderDataTable({
+    data_list <- selected_country()
+    raw_data <- data_list[[1]]
     datatable(raw_data)
   })
   
   # create a data plot
   output$data_plot <- renderPlot({
-    if(!input$advanced){
+    if(is.null(input$advanced)){
       NULL
     } 
     else {
-      ggplot(raw_data, aes(Year, Loss)) + 
-        geom_bar(stat = 'identity') +
-        theme_bw()
+      data_list <- selected_country()
+      raw_data <- data_list[[1]]
+      # get data based on country input
+      ggplot(raw_data, aes(Year, Loss)) +
+        geom_bar(stat = 'identity', fill = 'darkblue',
+                 color = 'blue', 
+                 alpha = 0.7) +
+               labs(title = 'Peril Data')+
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+              axis.text.y = element_text(size = 12),
+              axis.title = element_text(size = 12)) 
     }
     
   })
   
-  # create a reactive data set to select region
-  pop_data <- reactive({
-    region_name <- input$region
-    region_pop <- popn.data[popn.data$Region == region_name,]
-  })
-  
-  # create a reactive dataset for scaled by population, gdp growth (advanced settings), or inflation (advanced settings)
-  # calculate the scaling factors for each historic year relative to the most recent population figure using the formula:
-  scale_by_pop <- reactive({
-    # get data from reactive data subsetted by region above
-    data <- pop_data()
-    
-    # current pop/histic pop in year i, where i represents each of the years prior to the current population in the modelled time horizon.
-    # The current pop is defined as the most recent population figure available in the Tool or entered by the user.
-    data <- data[order(data$Year, decreasing = TRUE),]
-    
-    data$scaling_factor <- data$Population[1]/data$Population
-    
-    # Multiply the original loss data value by the respective scaling factor based on the year the loss data value is from.
-    # join peril data with data
-    data <- inner_join(data, archetype.data, by = 'Year')
-    data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
-    return(data)
-    
-  })
-  
-  # LINEAR DETRENDING: The user is able to linearly detrend the loss data to retrospectively correct any 
-  # linear trend in the data by adjusting past values.
-  # create a reactive dataset to further detrend (advanced settings) after scaling has already been applied
-  # Right now just by population, but will eventually be by GDP and inflation
-  advanced_detrend_p_value <- reactive({
-    # get subsetted (by region) and scaled data 
-    scaled_data <- scale_by_pop()
-    
-    # test for any remaining trend in the scaled loss (this time scaled by population, 
-    # but can do GDP and inflation too) 
-    # Stuck here and will ask about further detrending with t test.
-    # in the meantime use cox stuart detrending to get p value.
-    p_value <- trend.test(scaled_data$scaled_loss,plot = FALSE) # i
-    p_value <- p_value$p.value
-    return(p_value)
-  })
+  # # create a reactive data set to select region
+  # pop_data <- reactive({
+  #   region_name <- input$region
+  #   region_pop <- popn.data[popn.data$Region == region_name,]
+  # })
+  # 
+  # # create a reactive dataset for scaled by population, gdp growth (advanced settings), or inflation (advanced settings)
+  # # calculate the scaling factors for each historic year relative to the most recent population figure using the formula:
+  # scale_by_pop <- reactive({
+  #   # get data from reactive data subsetted by region above
+  #   data <- pop_data()
+  #   
+  #   # current pop/histic pop in year i, where i represents each of the years prior to the current population in the modelled time horizon.
+  #   # The current pop is defined as the most recent population figure available in the Tool or entered by the user.
+  #   data <- data[order(data$Year, decreasing = TRUE),]
+  #   
+  #   data$scaling_factor <- data$Population[1]/data$Population
+  #   
+  #   # Multiply the original loss data value by the respective scaling factor based on the year the loss data value is from.
+  #   # join peril data with data
+  #   data <- inner_join(data, archetype.data, by = 'Year')
+  #   data$scaled_loss <- data$scaling_factor*data$Total_NNDIS_Losses
+  #   return(data)
+  #   
+  # })
+  # 
+  # # LINEAR DETRENDING: The user is able to linearly detrend the loss data to retrospectively correct any 
+  # # linear trend in the data by adjusting past values.
+  # # create a reactive dataset to further detrend (advanced settings) after scaling has already been applied
+  # # Right now just by population, but will eventually be by GDP and inflation
+  # advanced_detrend_p_value <- reactive({
+  #   # get subsetted (by region) and scaled data 
+  #   scaled_data <- scale_by_pop()
+  #   
+  #   # test for any remaining trend in the scaled loss (this time scaled by population, 
+  #   # but can do GDP and inflation too) 
+  #   # Stuck here and will ask about further detrending with t test.
+  #   # in the meantime use cox stuart detrending to get p value.
+  #   p_value <- trend.test(scaled_data$scaled_loss,plot = FALSE) # i
+  #   p_value <- p_value$p.value
+  #   return(p_value)
+  # })
   
   # The basic user will not see this, only the advanced user
   frequency_distribution_bernoulli <- reactive({
