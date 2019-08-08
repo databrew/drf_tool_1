@@ -38,6 +38,7 @@ ui <- dashboardPage(skin = 'blue',
                                 br(),
                                 br(),
                                 h3("Disclaimer"),
+                                
                                 p(),
                                 br(), 
                                 h3("Confidentiality"),
@@ -208,16 +209,99 @@ server <- function(input, output) {
     country_name <- input$country
     
     if(country_name == 'Afghanistan'){
-      data_list <- afghanistan_data
+      country_data <- raw_data_af
     } else if (country_name == 'Malaysia'){
-      data_list <- malaysia_data
+      country_data <- raw_data_malay
     } else if (country_name == 'Senegal'){
-      data_list <- senegal_data
+      country_data <- raw_data_sen
     } else {
-      data_list <- somalia_data
+      country_data <- raw_data_som
     }
-    return(data_list)
+    return(country_data)
   })
+  
+  # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
+  # # The basic user will not see this, only the advanced user
+  # frequency_distribution_bernoulli <- reactive({
+  #   # will have other options for different scales later
+  #   freq_data <- scale_by_pop()
+  #   # temporarily do simulation 
+  #   freq_data <- freq_data[complete.cases(freq_data),]
+  #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
+  #   # get trials max year minus min year
+  #   num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
+  #   num_trials <- num_trials + 1
+  #   mle_bern <- sum(nrow(freq_data)/num_trials)
+  #   uniform_dis <- runif(1000, 0, 1)
+  #   sim_freq_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
+  #   # create a variable to show success (mle?uniform_dis, then success)
+  #   sim_freq_data$outcome <- ifelse(sim_freq_data$uniform_dis < mle_bern, 'success', 'fail')
+  #   
+  # })
+  # 
+  # DONT USE YET
+
+  
+  
+  # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
+  get_aic <- reactive({
+    
+    # get country data
+    data  <- selected_country()
+    
+    # fit poisson
+    poisson <- fitdistr(data$Loss, "Poisson")
+    poisson_aic <- AIC(poisson)
+    
+    # fit lognormal
+    log_normal <- fitdistr(data$Loss, "lognormal")
+    log_normal_aic <- AIC(log_normal)
+    
+    # fit beta
+    # not working
+   
+    # # get the beta parameters, a, b. using mean and variance of the data
+    # temp <- scale(data$Loss,center = FALSE, scale = TRUE)
+    # fitdistrplus::fitdist(data$Loss, distr = 'beta')
+    # # mean 
+    # mu <- mean(data$Loss)
+    # var <- var(data$Loss)
+    # get_beta_params <- function(mu, var) {
+    #   alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
+    #   beta <- alpha * (1 / mu - 1)
+    #   return(params = list(alpha = alpha, beta = beta))
+    # }
+    # alpha <- get_beta_params(mu, var)$alpha
+    # beta <- get_beta_params(mu, var)$beta
+    
+    # fit gamma
+    gamma <- fitdistr(data$Loss, "gamma")
+    gamma_aic <- AIC(gamma)
+    
+    # fit frechet
+    # nor working
+    # fit the weibull to the reciprocal of the data (1/x) and invert the lambda parameter
+    frechet <- fitdistr(data$Loss, "frechet")
+    frechet_aic <- AIC(frechet)
+    
+    # fit gumbel
+    # not working
+    gumbel <- fitdistr(data$Loss, "gumbel")
+    gumbel_aic <- AIC(gumbel)
+    
+    # fit weilbull
+    # optimization failed
+    weibull <- fitdistr(data$Loss, "weibull")
+    weibull_aic <- AIC(weibull)
+    
+    # fit pareto
+    # not working 
+    pareto <- fitdistr(data$Loss, "pareto")
+    pareto_aic <- AIC(pareto)
+    
+  })
+  
+  
   
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
@@ -228,8 +312,8 @@ server <- function(input, output) {
     # so <- somalia_data[[5]]
     
     plot_title <- input$country
-    data_list <- selected_country()
-    dat <- data_list[[5]]
+    country_data <- selected_country()
+    dat <- country_data[[5]]
     plot_bar(temp_dat = dat, 
              bar_color = 'black', 
              border_color = 'black', 
@@ -243,8 +327,8 @@ server <- function(input, output) {
   # exhibit 2
   output$loss_exceedance <- renderPlot({
     
-    data_list <- selected_country()
-    dat <- data_list[[8]]
+    country_data <- selected_country()
+    dat <- country_data[[8]]
     plot_title <- input$country
     plot_line(temp_dat = dat, 
               line_color = 'black', 
@@ -258,8 +342,8 @@ server <- function(input, output) {
   output$annual_loss_gap <- renderPlot({
     plot_title <- input$country
     
-    data_list <- selected_country()
-    dat <- data_list[[7]]
+    country_data <- selected_country()
+    dat <- country_data[[7]]
   
     plot_bar(temp_dat = dat, 
              bar_color = 'black', 
@@ -274,8 +358,8 @@ server <- function(input, output) {
   output$loss_exceedance_gap <- renderPlot({
   
     plot_title <- input$country
-    data_list <- selected_country()
-    dat <- data_list[[6]]
+    country_data <- selected_country()
+    dat <- country_data[[6]]
     
     plot_line(temp_dat = dat, 
               line_color = 'black', 
@@ -291,8 +375,8 @@ server <- function(input, output) {
   # create table for aic
   output$aic_table <- renderDataTable({
 
-      data_list <- selected_country()
-      aic_data <- data_list[[3]]
+      country_data <- selected_country()
+      aic_data <- country_data[[3]]
       aic_data <- apply(aic_data, 2, function(x) as.numeric(x))
       aic_data <- apply(aic_data, 2, function(x) round(x, 4))
       DT::datatable(aic_data, options = list(dom = 't'))
@@ -303,8 +387,8 @@ server <- function(input, output) {
   # create table for aic
   output$mle_table <- renderDataTable({
     
-      data_list <- selected_country()
-      mle_data <- data_list[[2]]
+      country_data <- selected_country()
+      mle_data <- country_data[[2]]
       mle_data <- apply(mle_data, 2, function(x) as.numeric(x))
       mle_data <- apply(mle_data, 2, function(x) round(x, 4))
       DT::datatable(mle_data, options = list(dom = 't'))
@@ -316,8 +400,8 @@ server <- function(input, output) {
   output$data_table_peril <- renderDataTable({
     amend_upload <- input$amend_upload
     if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
-      data_list <- selected_country()
-      raw_data <- data_list[[1]]
+      country_data <- selected_country()
+      raw_data <- country_data[[1]]
       DT::datatable(raw_data)
     } else {
       NULL
@@ -337,8 +421,8 @@ server <- function(input, output) {
 
   # create a data table  
   output$data_table <- DT::renderDataTable({
-    data_list <- selected_country()
-    raw_data <- data_list[[1]]
+    country_data <- selected_country()
+    raw_data <- country_data[[1]]
     datatable(raw_data)
   })
   
@@ -348,8 +432,8 @@ server <- function(input, output) {
       NULL
     } 
     else {
-      data_list <- selected_country()
-      raw_data <- data_list[[1]]
+      country_data <- selected_country()
+      raw_data <- country_data[[1]]
       # get data based on country input
       ggplot(raw_data, aes(Year, Loss)) +
         geom_bar(stat = 'identity', fill = 'darkblue',
@@ -407,149 +491,7 @@ server <- function(input, output) {
   #   return(p_value)
   # })
   
-  # The basic user will not see this, only the advanced user
-  frequency_distribution_bernoulli <- reactive({
-    # will have other options for different scales later
-    freq_data <- scale_by_pop()
-    # temporarily do simulation 
-    freq_data <- freq_data[complete.cases(freq_data),]
-    # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-    # get trials max year minus min year
-    num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
-    num_trials <- num_trials + 1
-    mle_bern <- sum(nrow(freq_data)/num_trials)
-    uniform_dis <- runif(1000, 0, 1)
-    sim_freq_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
-    # create a variable to show success (mle?uniform_dis, then success)
-    sim_freq_data$outcome <- ifelse(sim_freq_data$uniform_dis < mle_bern, 'success', 'fail')
-    
-  })
   
-  # # The basic user will not see this, only the advanced user
-  frequency_distribution_poisson <- reactive({
-    # will have other options for different scales later
-    freq_data <- scale_by_pop()
-    #   # temporarily do simulation
-    freq_data <- freq_data[complete.cases(freq_data),]
-    #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-    #   # get trials max year minus min year
-    #
-  })
-  
-  # get log normal aic
-  log_normal_loss_dis <- reactive({
-    
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    log_normal <- fitdistr(data$scaled_loss, "lognormal")
-    log_normal_aic <- AIC(log_normal)
-    
-    return(log_normal_aic)
-    
-  })
-  
-  # get beta aic
-  beta_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    beta<- fitdistr(data$scaled_loss, "beta")
-    beta_aic <- AIC(beta)
-    # ISSUE need names list
-    return(beta_aic)
-  })
-  
-  # get gamme aic
-  gamma_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    gamma <- fitdistr(data$scaled_loss, "gamma")
-    gamma_aic <- AIC(gamma)
-    # Error
-    return(gamma_aic)
-    
-  })
-  
-  # get frechet aic
-  frechet_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    frechet <- fitdistr(data$scaled_loss, "frechet")
-    frechet_aic <- AIC(frechet)
-    return(frechet_aic)
-    
-  })
-  
-  # get gumbel aic
-  gumbel_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    gumbel <- fitdistr(data$scaled_loss, "gumbel")
-    gumbel_aic <- AIC(gumbel)
-    return(gumbel_aic)
-  })
-  
-  # get weilbull aic
-  weilbull_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    weilbull <- fitdistr(data$scaled_loss, "weilbull")
-    weilbull_aic <- AIC(weilbull)
-    return(weilbull_aic)
-    
-  })
-  
-  # get pareto aic
-  pareto_loss_dis <- reactive({
-    # get scaled data
-    data <- scale_by_pop
-    
-    # get complete cases
-    data <- data[complete.cases(data),]
-    
-    pareto <- fitdistr(data$scaled_loss, "pareto")
-    pareto_aic <- AIC(pareto)
-    return(pareto)
-  })
-  
-  
-  # make reactive object to compare and find best AIC of parametic distributions
-  # the distr function allows for Distributions "beta", "cauchy", "chi-squared", "exponential", 
-  # "gamma", "geometric", "log-normal", "lognormal", "logistic", "negative binomial", "normal",
-  # "Poisson", "t" and "weibull" are recognised, case being ignored.
-  best_loss_dis <- reactive({
-    # will have other options for different scales later
-    pareto_aic <- pareto_loss_dis()
-    weilbull_aic <- weilbull_loss_dis()
-    log_normal_aic <- log_normal_loss_dis()
-    beta_aic <- beta_loss_dis()
-    frechet_aic <- frechet_loss_dis()
-    gamma_aic <- gamme_loss_dis()
-    gumbel_aic <- gumbel_loss_dis
-  })
   
   # create reactive object for each frequency and loss distribution
   
