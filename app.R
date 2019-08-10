@@ -280,7 +280,8 @@ server <- function(input, output) {
     
     # fit frechet
     # nor working
-    # fit the weibull to the reciprocal of the data (1/x) and invert the lambda parameter
+    # fit the weibull to the reciprocal of the data (1/x) and invert the lambda parameteriui
+    
     frechet <- fitdistr(data$Loss, "frechet")
     frechet_aic <- AIC(frechet)
     
