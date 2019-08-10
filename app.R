@@ -241,18 +241,19 @@ server <- function(input, output) {
   # 
   # DONT USE YET
 
-  
-  
+  # 
+  # get_poisson({
+  #   # poisson <- fitdistr(data$Loss, "Poisson")
+  #   # poisson_aic <- AIC(poisson)
+  #   
+  # })
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
   get_aic <- reactive({
     
     # get country data
     data  <- selected_country()
     
-    # fit poisson
-    poisson <- fitdistr(data$Loss, "Poisson")
-    poisson_aic <- AIC(poisson)
-    
+
     # fit lognormal
     log_normal <- fitdistr(data$Loss, "lognormal")
     log_normal_aic <- AIC(log_normal)
@@ -281,8 +282,10 @@ server <- function(input, output) {
     # fit frechet
     # nor working
     # fit the weibull to the reciprocal of the data (1/x) and invert the lambda parameteriui
+    data$Loss_rec <- 1/data$Loss
     
-    frechet <- fitdistr(data$Loss, "frechet")
+    frechet <- fitdistr(data$Loss_rec, "weibull")
+    frechet$estimate[2] <- 1/frechet$estimate[2]
     frechet_aic <- AIC(frechet)
     
     # fit gumbel
