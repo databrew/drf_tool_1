@@ -16,6 +16,11 @@ library(aTSA)
 library(MASS)
 library(databrew)
 library(reshape2)
+library(fitdistrplus)
+library(actuar)
+library(ismev)
+library(EnvStats)
+
 
 source('functions.R')
 options(scipen = '999')

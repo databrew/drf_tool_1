@@ -1,4 +1,38 @@
+# normalize data
+normalize_data <- function(x, add_decimal){
+  min_x <- min(x)
+  max_x <- max(x)
+  z <- (x - min_x)/(max_x - min_x)
+  if(add_decimal){
+    min_z <- min(z)
+    max_z <- max(z)
+    z[z==max_z] <- max_z - 0.001
+    z[z==min_z] <- min_z + 0.001
+    
+  }
+  return(z)
+}
 
+# fit gumbel function
+fit_gumbel <- function(x){
+  dgumbel <- function(x,mu,s){ # PDF
+    exp((mu - x)/s - exp((mu - x)/s))/s
+  }
+  
+  pgumbel <- function(q,mu,s){ # CDF
+    exp(-exp(-((q - mu)/s)))
+  }
+  
+  qgumbel <- function(p, mu, s){ # quantile function
+    mu-s*log(-log(p))
+  }
+  
+  
+  # get gumble 
+  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=5, s=5), method="mle")
+  
+  return(gumbel_fit)
+}
 
 # create a plot for a generalized bar graph.
 plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){

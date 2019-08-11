@@ -256,55 +256,47 @@ server <- function(input, output) {
 
     # fit lognormal
     log_normal <- fitdistr(data$Loss, "lognormal")
-    log_normal_aic <- AIC(log_normal)
+    log_normal_aic <- round(AIC(log_normal), 4)
+    message('log normal AIC is ', log_normal_aic)
     
-    # fit beta
-    # not working
-   
-    # # get the beta parameters, a, b. using mean and variance of the data
-    # temp <- scale(data$Loss,center = FALSE, scale = TRUE)
-    # fitdistrplus::fitdist(data$Loss, distr = 'beta')
-    # # mean 
-    # mu <- mean(data$Loss)
-    # var <- var(data$Loss)
-    # get_beta_params <- function(mu, var) {
-    #   alpha <- ((1 - mu) / var - 1 / mu) * mu ^ 2
-    #   beta <- alpha * (1 / mu - 1)
-    #   return(params = list(alpha = alpha, beta = beta))
-    # }
-    # alpha <- get_beta_params(mu, var)$alpha
-    # beta <- get_beta_params(mu, var)$beta
+    # fit beta (only one not replicating)
+    # normalize data to 0, 1
+    x <- normalize_data(data$Loss, add_decimal = TRUE)
+    beta <- fitdistrplus::fitdist(data = x, distr = 'beta', method = 'mle')
+    beta_aic <- NA
+    # beta_aic <- round(beta$aic, 4)
+    message('beta AIC is ', beta_aic)
+    
+
+    # EQUATION FOR AIC 
+    # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
     
     # fit gamma
     gamma <- fitdistr(data$Loss, "gamma")
-    gamma_aic <- AIC(gamma)
+    gamma_aic <- round(AIC(gamma), 4)
+    message('gamma AIC is ', gamma_aic)
     
     # fit frechet
-    # nor working
-    # fit the weibull to the reciprocal of the data (1/x) and invert the lambda parameteriui
-    data$Loss_rec <- 1/data$Loss
-    
-    frechet <- fitdistr(data$Loss_rec, "weibull")
-    frechet$estimate[2] <- 1/frechet$estimate[2]
-    frechet_aic <- AIC(frechet)
-    
-    # fit gumbel
-    # not working
-    gumbel <- fitdistr(data$Loss, "gumbel")
-    gumbel_aic <- AIC(gumbel)
+    frechet <- fitdistrplus::fitdist(data = data$Loss, distr = 'frechet', method = 'mle',  start = list(shape = 1, scale = 500) )
+    frechet_aic <- round(frechet$aic, 4)
+  
+    # git gumbel
+    gumbel_fit <- fit_gumbel(data$Loss)
+    gumble_aic <- round(gumbel_fit$aic, 4)
     
     # fit weilbull
-    # optimization failed
-    weibull <- fitdistr(data$Loss, "weibull")
-    weibull_aic <- AIC(weibull)
+    weibull <- MASS::fitdistr(data$Loss, "weibull", lower = c(0.1, 0.1))
+    weibull_aic <- round(AIC(weibull), 4)
     
     # fit pareto
     # not working 
-    pareto <- fitdistr(data$Loss, "pareto")
-    pareto_aic <- AIC(pareto)
-    
+    pareto <- fitdistrplus::fitdist(data = data$Loss, distr = 'pareto', method = 'mme',  start = list(shape = 1, scale = 500) )
+    pareto_aic <- round(pareto$aic, 4)
+    MASS::fitdistr(data$Loss, dpareto, list(shape=1, scale=1))
+
   })
   
+  memp <- function(x, order) mean(x^order)
   
   
   # annual loss exhibit 1
