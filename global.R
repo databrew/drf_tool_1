@@ -18,8 +18,9 @@ library(databrew)
 library(reshape2)
 library(fitdistrplus)
 library(actuar)
-library(ismev)
-library(EnvStats)
+library(extraDistr)
+# library(ismev)
+# library(EnvStats)
 
 
 source('functions.R')

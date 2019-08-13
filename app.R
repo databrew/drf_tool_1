@@ -253,7 +253,6 @@ server <- function(input, output) {
     # get country data
     data  <- selected_country()
     
-
     # fit lognormal
     log_normal <- fitdistr(data$Loss, "lognormal")
     log_normal_aic <- round(AIC(log_normal), 4)
@@ -261,7 +260,7 @@ server <- function(input, output) {
     
     # fit beta (only one not replicating)
     # normalize data to 0, 1
-    x <- normalize_data(data$Loss, add_decimal = TRUE)
+    x <- normalize_data(data$Loss, add_decimal = TRUE, dec = 0.001)
     beta <- fitdistrplus::fitdist(data = x, distr = 'beta', method = 'mle')
     beta_aic <- NA
     # beta_aic <- round(beta$aic, 4)
@@ -277,26 +276,29 @@ server <- function(input, output) {
     message('gamma AIC is ', gamma_aic)
     
     # fit frechet
-    frechet <- fitdistrplus::fitdist(data = data$Loss, distr = 'frechet', method = 'mle',  start = list(shape = 1, scale = 500) )
+    dfrechet(data$Loss, lambda = 1, mu = 0, sigma = 1, log = TRUE)
+    frechet <- fitdistrplus::fitdist(data$Loss, "frechet", start=list( mu=0, sigma=1), method="mle")
     frechet_aic <- round(frechet$aic, 4)
-  
+    message('frechet AIC is ', frechet_aic)
+    
     # git gumbel
     gumbel_fit <- fit_gumbel(data$Loss)
     gumble_aic <- round(gumbel_fit$aic, 4)
+    message('gumble AIC is ', gumble_aic)
     
     # fit weilbull
     weibull <- MASS::fitdistr(data$Loss, "weibull", lower = c(0.1, 0.1))
     weibull_aic <- round(AIC(weibull), 4)
+    message('weilbull AIC is ', weibull_aic)
+    
     
     # fit pareto
     # not working 
-    pareto <- fitdistrplus::fitdist(data = data$Loss, distr = 'pareto', method = 'mme',  start = list(shape = 1, scale = 500) )
-    pareto_aic <- round(pareto$aic, 4)
-    MASS::fitdistr(data$Loss, dpareto, list(shape=1, scale=1))
+    # pareto <- fitdistrplus::fitdist(data = data$Loss, distr = 'pareto', method = 'mme',  start = list(shape = 1, scale = 500) )
+    # pareto_aic <- round(pareto$aic, 4)
+    # MASS::fitdistr(data$Loss, dpareto, list(shape=1, scale=1))
 
   })
-  
-  memp <- function(x, order) mean(x^order)
   
   
   # annual loss exhibit 1

@@ -1,35 +1,41 @@
 # normalize data
-normalize_data <- function(x, add_decimal){
+normalize_data <- function(x, add_decimal, dec = NULL){
   min_x <- min(x)
   max_x <- max(x)
   z <- (x - min_x)/(max_x - min_x)
   if(add_decimal){
     min_z <- min(z)
     max_z <- max(z)
-    z[z==max_z] <- max_z - 0.001
-    z[z==min_z] <- min_z + 0.001
+    z[z==max_z] <- max_z - dec
+    z[z==min_z] <- min_z + dec
     
   }
   return(z)
 }
 
+# dgumbel function
+dgumbel <- function(x,mu,s){ # PDF
+  exp((mu - x)/s - exp((mu - x)/s))/s
+}
+
+# pgumbel function
+pgumbel <- function(q,mu,s){ # CDF
+  exp(-exp(-((q - mu)/s)))
+}
+
+# qgumbel function
+qgumbel <- function(p, mu, s){ # quantile function
+  mu-s*log(-log(p))
+}
+
+
 # fit gumbel function
 fit_gumbel <- function(x){
-  dgumbel <- function(x,mu,s){ # PDF
-    exp((mu - x)/s - exp((mu - x)/s))/s
-  }
+
+ 
   
-  pgumbel <- function(q,mu,s){ # CDF
-    exp(-exp(-((q - mu)/s)))
-  }
-  
-  qgumbel <- function(p, mu, s){ # quantile function
-    mu-s*log(-log(p))
-  }
-  
-  
-  # get gumble 
-  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=5, s=5), method="mle")
+  # fit gumble 
+  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=0, s=1), method="mle")
   
   return(gumbel_fit)
 }
@@ -87,9 +93,6 @@ plot_line <- function(temp_dat,
   
 }
 
-
-
-
 # create plot to visualize simulationdata data
 plot_sim <- function(temp_dat){
   p <- ggplot(temp_dat, aes(SimulatedNNDISLoss)) +
@@ -97,7 +100,7 @@ plot_sim <- function(temp_dat){
     labs(x="Simulated Loss", 
          y="Frequency",
          title='Distribution of simulated loss',
-         subtitle = '10k simulations') +
+         subtitle = '15k simulations') +
     theme_databrew()
   return(p)
 }
