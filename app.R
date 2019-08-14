@@ -248,15 +248,30 @@ server <- function(input, output) {
   #   
   # })
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
-  get_aic <- reactive({
+  get_aic_mle <- reactive({
     
     # get country data
     data  <- selected_country()
     
+    ##########
     # fit lognormal
+    #########
     log_normal <- fitdistr(data$Loss, "lognormal")
+    # get aic
     log_normal_aic <- round(AIC(log_normal), 4)
+    # if there is an error, fill object with NA
     message('log normal AIC is ', log_normal_aic)
+    if(!exists('log_normal_aic')){
+      log_normal_aic <- NA
+    }
+    # get MLE 
+    log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
+    message('log normal mle is ', log_normal_mle)
+    # create data frame to store aic and MLEs
+    log_normal_data <- data_frame(name = 'log_normal',
+                                  aic = log_normal_aic, 
+                                  mle_1 = round(log_normal$estimate[1], 4),
+                                  mle_2 = round(log_normal$estimate[2], 4))
     
     # fit beta (only one not replicating)
     # normalize data to 0, 1
@@ -265,41 +280,125 @@ server <- function(input, output) {
     beta_aic <- NA
     # beta_aic <- round(beta$aic, 4)
     message('beta AIC is ', beta_aic)
+    beta_mle <- NA
+    message('beta mle is ', beta_mle)
+    beta_data <- data_frame(name = 'beta',
+                            aic = NA, 
+                            mle_1 = NA,
+                            mle_2 = NA)
     
-
     # EQUATION FOR AIC 
     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-    
+
     # fit gamma
     gamma <- fitdistr(data$Loss, "gamma")
     gamma_aic <- round(AIC(gamma), 4)
     message('gamma AIC is ', gamma_aic)
+    if(!exists('gamma_aic')){
+      gamma_aic <- NA
+    }
+    # get mle 
+    gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
+    message('gamme mle is ', gamma_mle)
+    gamma_data <- data_frame(name = 'gamma',
+                                  aic = gamma_aic, 
+                                  mle_1 = round(gamma$estimate[1], 4),
+                                  mle_2 = round(gamma$estimate[2], 4))
+    
     
     # fit frechet
-    dfrechet(data$Loss, lambda = 1, mu = 0, sigma = 1, log = TRUE)
+    dfrechet(data$Loss, lambda = 1, mu = 0, sigma = 1, log = FALSE)
     frechet <- fitdistrplus::fitdist(data$Loss, "frechet", start=list( mu=0, sigma=1), method="mle")
     frechet_aic <- round(frechet$aic, 4)
     message('frechet AIC is ', frechet_aic)
+    if(!exists('frechet_aic')){
+      frechet_aic <- NA
+    }
+    # get mle 
+    frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
+    message('frechet mle is ', frechet_mle)
+    frechet_data <- data_frame(name = 'frechet',
+                                  aic = frechet_aic, 
+                                  mle_1 = round(frechet$estimate[1], 4),
+                                  mle_2 = round(frechet$estimate[2], 4))
     
     # git gumbel
     gumbel_fit <- fit_gumbel(data$Loss)
-    gumble_aic <- round(gumbel_fit$aic, 4)
-    message('gumble AIC is ', gumble_aic)
+    gumbel_aic <- round(gumbel_fit$aic, 4)
+    message('gumbel AIC is ', gumbel_aic)
+    if(!exists('gumbel_aic')){
+      gumbel_aic <- NA
+    }
+    # get mle
+    gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
+    message('gumbel mle is ', gumbel_mle)
+    gumbel_data <- data_frame(name = 'gumbel',
+                                  aic = gumbel_aic, 
+                                  mle_1 = round(gumbel_fit$estimate[1], 4),
+                                  mle_2 = round(gumbel_fit$estimate[2], 4))
     
     # fit weilbull
     weibull <- MASS::fitdistr(data$Loss, "weibull", lower = c(0.1, 0.1))
     weibull_aic <- round(AIC(weibull), 4)
     message('weilbull AIC is ', weibull_aic)
-    
+    if(!exists('weilbull_aic')){
+      weilbull_aic <- NA
+    }
+    # get mle
+    weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
+    message('weibull mle is ', weibull_mle)
+    weibull_data <- data_frame(name = 'weibull',
+                                  aic = weibull_aic, 
+                                  mle_1 = round(weibull$estimate[1], 4),
+                                  mle_2 = round(weibull$estimate[2], 4))
     
     # fit pareto
     # not working 
     # pareto <- fitdistrplus::fitdist(data = data$Loss, distr = 'pareto', method = 'mme',  start = list(shape = 1, scale = 500) )
     # pareto_aic <- round(pareto$aic, 4)
     # MASS::fitdistr(data$Loss, dpareto, list(shape=1, scale=1))
-
+    pareto_aic <- NA
+    pareto_data <- data_frame(name = 'pareto',
+                            aic = NA, 
+                            mle_1 = NA,
+                            mle_2 = NA)
+    
+    
+    # create a data frame out of data results
+    aic_mle_data <- rbind(log_normal_data,
+                          gamma_data,
+                          beta_data,
+                          frechet_data,
+                          gumbel_data,
+                          weibull_data,
+                          pareto_data)
+    
+    return(aic_dat)
   })
   
+  x <- raw_data_af$Loss
+  f <- function(x = raw_data_af$Loss, rho, a, s) {
+    temp <- 1/(a*gamma(rho)) * (a / (x-s))^(rho+1) * exp( - a/(x-s) )
+    return(temp)
+  }
+  est <- stats4::mle(minuslogl = f, start=list(rho = 0, a=2,s=0))
+  # create table for aic
+  output$aic_table <- renderDataTable({
+    
+    aic_data <- get_aic_mle()
+    DT::datatable(aic_data, options = list(dom = 't'))
+    
+    
+  }) 
+  
+  
+  # create a reactive function to get rag ratings
+  get_rag_ratings <- reactive({
+    rag_dat <- get_aic()
+    
+    
+    
+  })
   
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
@@ -370,18 +469,7 @@ server <- function(input, output) {
     
   })
   
-  # create table for aic
-  output$aic_table <- renderDataTable({
 
-      country_data <- selected_country()
-      aic_data <- country_data[[3]]
-      aic_data <- apply(aic_data, 2, function(x) as.numeric(x))
-      aic_data <- apply(aic_data, 2, function(x) round(x, 4))
-      DT::datatable(aic_data, options = list(dom = 't'))
-      
-  
-  }) 
-  
   # create table for aic
   output$mle_table <- renderDataTable({
     
