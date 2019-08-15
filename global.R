@@ -17,10 +17,7 @@ library(MASS)
 library(databrew)
 library(reshape2)
 library(fitdistrplus)
-library(actuar)
-library(extraDistr)
-# library(ismev)
-# library(EnvStats)
+# library(actuar)
 
 
 
@@ -54,19 +51,15 @@ raw_data_af <- read.csv('data/Afghanistan/raw_data_all.csv', header = FALSE)
 # rename columns
 names(raw_data_af) <- c('Country', 'Year', 'Peril', 'Loss')
 
-
 ##########
 # Somalia
 ##########
+
 # set scaling number
 scale_by = 1000000
 
-
 # read in prepopulated raw data 
 raw_data_som <- read.csv('data/Somalia/raw_data_all.csv', header = TRUE)
-
-# # read in scaled data from tool
-# scaled_data_som <- read.csv('data/Somalia/scaled_data_flood.csv', header = TRUE)
 
 # rename columns
 names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
@@ -86,9 +79,6 @@ raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
 
 # rename columns
 names(raw_data_malay) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# only keep data from 2003 forward (15 years)
-# raw_data_malay <- raw_data_malay[raw_data_malay$Year >= 2003,]
 
 # divide loss by 1000
 raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
