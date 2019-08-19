@@ -17,8 +17,10 @@ library(MASS)
 library(databrew)
 library(reshape2)
 library(fitdistrplus)
-# library(actuar)
-
+library(actuar)
+library(extraDistr)
+library(ParetoPosStable)
+library(Hmisc)
 
 
 source('functions.R')

@@ -249,6 +249,7 @@ server <- function(input, output) {
   # })
   
   # HERE: MAKE SURE YOU HAVE THE RIGHT MLES BEFORE SIMULATIONS, GAMMA NEEDS AN INVERSE AND ONE OTHER NEEDS A SQUARED, BOTH FROM SECOND MLE
+  # 
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
   get_aic_mle <- reactive({
     
@@ -273,7 +274,7 @@ server <- function(input, output) {
     log_normal_data <- data_frame(name = 'log_normal',
                                   aic = log_normal_aic, 
                                   mle_1 = round(log_normal$estimate[1], 4),
-                                  mle_2 = round(log_normal$estimate[2], 4))
+                                  mle_2 = round(log_normal$estimate[2]^2, 4))
     
     # fit beta (only one not replicating)
     # normalize data to 0, 1
@@ -293,8 +294,8 @@ server <- function(input, output) {
     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
 
     # fit gamma
-    gamma <- fitdistr(data$Loss, "gamma")
-    gamma_aic <- round(AIC(gamma), 4)
+    gamma <- fitdistrplus::fitdist(data$Loss, "gamma", start=list( shape=1, scale=1), method="mle")
+    gamma_aic <- round(gamma$aic, 4)
     message('gamma AIC is ', gamma_aic)
     if(!exists('gamma_aic')){
       gamma_aic <- NA
@@ -307,10 +308,9 @@ server <- function(input, output) {
                                   mle_1 = round(gamma$estimate[1], 4),
                                   mle_2 = round(gamma$estimate[2], 4))
     
-    
     # fit frechet
-    dfrechet(data$Loss, lambda = 1, mu = 0, sigma = 1, log = FALSE)
-    frechet <- fitdistrplus::fitdist(data$Loss, "frechet", start=list( mu=0, sigma=1), method="mle")
+    dfrechet(data$Loss, mu = 0, sigma = 1, log = TRUE)
+    frechet <- fitdistrplus::fitdist(data$Loss, "frechet", start=list(mu=0, sigma=1), method="mle")
     frechet_aic <- round(frechet$aic, 4)
     message('frechet AIC is ', frechet_aic)
     if(!exists('frechet_aic')){
@@ -339,12 +339,12 @@ server <- function(input, output) {
                                   mle_1 = round(gumbel_fit$estimate[1], 4),
                                   mle_2 = round(gumbel_fit$estimate[2], 4))
     
-    # fit weilbull
-    weibull <- MASS::fitdistr(data$Loss, "weibull", lower = c(0.1, 0.1))
-    weibull_aic <- round(AIC(weibull), 4)
-    message('weilbull AIC is ', weibull_aic)
-    if(!exists('weilbull_aic')){
-      weilbull_aic <- NA
+    # fit weibull
+    weibull <- fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=1, scale=1), method="mle")
+    weibull_aic <- round(weibull$aic, 4)
+    message('weibull AIC is ', weibull_aic)
+    if(!exists('weibull_aic')){
+      weibull_aic <- NA
     }
     # get mle
     weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
@@ -354,53 +354,114 @@ server <- function(input, output) {
                                   mle_1 = round(weibull$estimate[1], 4),
                                   mle_2 = round(weibull$estimate[2], 4))
     
-    # fit pareto
-    # not working 
-    # pareto <- fitdistrplus::fitdist(data = data$Loss, distr = 'pareto', method = 'mme',  start = list(shape = 1, scale = 500) )
-    # pareto_aic <- round(pareto$aic, 4)
-    # MASS::fitdistr(data$Loss, dpareto, list(shape=1, scale=1))
-    pareto_aic <- NA
-    pareto_data <- data_frame(name = 'pareto',
-                            aic = NA, 
-                            mle_1 = NA,
-                            mle_2 = NA)
+   # fit pareto
+   pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
+   pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
+   message('pareto AIC is ', pareto_aic)
+   if(!exists('pareto_aic')){
+     pareto_aic <- NA
+   }
+   # get mle
+   pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
+   message('pareto mle is ', pareto_mle)
+   pareto_data <- data_frame(name = 'pareto',
+                              aic = pareto_aic, 
+                              mle_1 = round(pareto$estimate[[1]], 4),
+                              mle_2 = round(pareto$estimate[[2]], 4))
+  
+   
+   # create a data frame out of data results
+   aic_mle_data <- rbind(log_normal_data,
+                         gamma_data,
+                         beta_data,
+                         frechet_data,
+                         gumbel_data,
+                         weibull_data,
+                         pareto_data)
+   
+   # change names of variable
+   names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
+   
+   # capitalize and remove underscore of Distribution
+   aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
+   aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
     
-    
-    # create a data frame out of data results
-    aic_mle_data <- rbind(log_normal_data,
-                          gamma_data,
-                          beta_data,
-                          frechet_data,
-                          gumbel_data,
-                          weibull_data,
-                          pareto_data)
-    
-    return(aic_dat)
+    return(aic_mle_data)
   })
   
-  x <- raw_data_af$Loss
-  f <- function(x = raw_data_af$Loss, rho, a, s) {
-    temp <- 1/(a*gamma(rho)) * (a / (x-s))^(rho+1) * exp( - a/(x-s) )
-    return(temp)
-  }
-  est <- stats4::mle(minuslogl = f, start=list(rho = 0, a=2,s=0))
-  # create table for aic
+ # create table for aic
   output$aic_table <- renderDataTable({
     
-    aic_data <- get_aic_mle()
-    DT::datatable(aic_data, options = list(dom = 't'))
+    aic_mle_data <- get_aic_mle()
+    DT::datatable(aic_mle_data, options = list(dom = 't'))
     
     
   }) 
-  
+
   
   # create a reactive function to get rag ratings
   get_rag_ratings <- reactive({
-    rag_dat <- get_aic()
+    aic_mle_data <- get_aic_mle()
+    # assign red, amber, or green to the distributions 
+   
+  })
+  
+  # create a reactive object that takes the aic_mle_data runs simulations on the 
+  # best distribution (found from min aic)
+  run_best_simulation <- reactive({
     
-    
+    dat <- get_aic_mle()
+    # get index for minimum aic
+    aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+    # subset my index
+    dat <- dat[aic_min_ind,]
+    # set conditions for each distribution
+    if(dat$Distribution == 'Log normal'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
+      }
+    } else if (dat$Distribution == 'Gamma'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }
+    } else if (dat$Distribution == 'Beta'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = 1/dat$`MLE 2`)
+      }
+    } else if (dat$Distribution == 'Frechet'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rfrechet(n = 15000, loc=0, scale=dat$`MLE 1`, shape=dat$`MLE 2`)
+      }
+    } else if (dat$Distribution == 'Gumbel'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }
+    } else if (dat$Distribution == 'Weibull'){
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }
+    } else {
+      if(any(is.na(dat$AIC))){
+        sim <- NA
+      } else {
+        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }
+    }
     
   })
+  
   
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
@@ -716,7 +777,7 @@ server <- function(input, output) {
       selectInput('prob_dis',
                   'Conditional loss distribution',
                   choices = c('Lognormal', 'Beta', 'Gamma', 
-                              'Frechet', 'Gumbel', 'Weilbull',
+                              'Frechet', 'Gumbel', 'weibull',
                               'Pareto', 'Poisson', ' Bernoulli'))
     }
     
