@@ -450,7 +450,7 @@ server <- function(input, output) {
     } 
     else if (dat$Distribution == 'Gumbel'){
       if(any(is.na(dat$AIC))){
-        sim <- NA
+        sim <- NA 
       } 
       else {
         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
