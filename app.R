@@ -386,7 +386,7 @@ server <- function(input, output) {
    aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
    aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
     
-    return(aic_mle_data)
+   return(aic_mle_data)
   })
   
  # create table for aic
@@ -419,43 +419,56 @@ server <- function(input, output) {
     if(dat$Distribution == 'Log normal'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
       }
-    } else if (dat$Distribution == 'Gamma'){
+    }
+    else if (dat$Distribution == 'Gamma'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
       }
-    } else if (dat$Distribution == 'Beta'){
+    } 
+    else if (dat$Distribution == 'Beta'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = 1/dat$`MLE 2`)
       }
-    } else if (dat$Distribution == 'Frechet'){
+    } 
+    else if (dat$Distribution == 'Frechet'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rfrechet(n = 15000, loc=0, scale=dat$`MLE 1`, shape=dat$`MLE 2`)
       }
-    } else if (dat$Distribution == 'Gumbel'){
+    } 
+    else if (dat$Distribution == 'Gumbel'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
       }
-    } else if (dat$Distribution == 'Weibull'){
+    } 
+    else if (dat$Distribution == 'Weibull'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
       }
-    } else {
+    } 
+    else {
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } else {
+      } 
+      else {
         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
       }
     }
