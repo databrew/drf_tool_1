@@ -21,6 +21,8 @@ library(actuar)
 library(extraDistr)
 library(ParetoPosStable)
 library(Hmisc)
+library(ExtDist)
+
 
 
 source('functions.R')

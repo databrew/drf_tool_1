@@ -253,6 +253,8 @@ server <- function(input, output) {
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
   get_aic_mle <- reactive({
     
+    
+    
     # get country data
     data  <- selected_country()
     
@@ -278,17 +280,19 @@ server <- function(input, output) {
     
     # fit beta (only one not replicating)
     # normalize data to 0, 1
-    x <- normalize_data(data$Loss, add_decimal = TRUE, dec = 0.001)
-    beta <- fitdistrplus::fitdist(data = x, distr = 'beta', method = 'mle')
-    beta_aic <- NA
+    
+    beta <- eBeta_ab(data$Loss, method = "numerical.MLE")
+    beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
+    beta_aic <- -(2*beta_ll + 2) 
+    beta_mle <- c(beta$shape1, beta$shape2)
+    
     # beta_aic <- round(beta$aic, 4)
     message('beta AIC is ', beta_aic)
-    beta_mle <- NA
     message('beta mle is ', beta_mle)
     beta_data <- data_frame(name = 'beta',
-                            aic = NA, 
-                            mle_1 = NA,
-                            mle_2 = NA)
+                            aic = round(beta_aic, 4), 
+                            mle_1 = round(beta_mle[1], 4),
+                            mle_2 = round(beta_mle[2], 4))
     
     # EQUATION FOR AIC 
     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
