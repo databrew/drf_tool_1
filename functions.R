@@ -35,7 +35,7 @@ fit_gumbel <- function(x){
  
   
   # fit gumble 
-  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=0, s=1), method="mle")
+  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=1, s=1), method="mle")
   
   return(gumbel_fit)
 }
@@ -61,27 +61,30 @@ plot_line <- function(temp_dat,
                       line_size, 
                       alpha, 
                       exhibit_2,
+                      largest_loss_num,
+                      largest_loss_year,
                       plot_title){
   
   if(!exhibit_2){
-   p <-  ggplot(dat, aes(percent, sort(funding_gap))) +
+   p <-  ggplot(temp_dat, aes(x, y)) +
       geom_line(size = line_size, color = line_color, alpha = alpha) +
       labs(x = 'Probability of Exceeding Loss',
            y = 'Funding gap (million USD)',
            title = plot_title) +
-      theme_bw() + 
+     theme_bw() + 
      theme(axis.text.x = element_text(angle = 0, size = 12),
            axis.text.y = element_text(size = 12),
            axis.title = element_text(size = 12)) 
+   
   } else {
     # get data based on country input
-    p <- ggplot(temp_dat, aes(percent, graph)) +
+    p <- ggplot(temp_dat, aes(x, y)) +
       geom_line(size = 1.5, color = 'blue') +
       labs(x = 'Probability of Exceeding Loss',
            y = 'Value of loss (million USD)',
            title = plot_title,
-           caption = 'dotted line represents largest loss 2018') +
-      geom_hline(yintercept  = 0.0004, linetype= 2) + 
+           caption = paste0('dotted line represents largest loss',' (', largest_loss_year, ')'))  +
+      geom_hline(yintercept  = largest_loss_num, linetype= 2) + 
       theme_bw() +
       theme(axis.text.x = element_text(angle = 0, size = 12),
             axis.text.y = element_text(size = 12),

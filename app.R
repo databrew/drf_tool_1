@@ -133,27 +133,31 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = 'simulations',
                                 fluidRow(
                                   column(6,
-                                         selectInput('frequency',
-                                                     'Frequency of event distribution',
-                                                     choices = c('Bernoulli',
-                                                                 'Poisson'))), # basic user and advanced user
-                                  column(6,
                                          uiOutput('prob_dis')) # advanced user only
                                 ),
                                 fluidRow(
                                   br(),
-                                  column(6,
-                                         box(
-                                           title = 'MLE',
-                                           width = 12,
-                                           status = 'primary',
-                                         DT::dataTableOutput('mle_table'))), # maximum liklihood estimations for each distribution or the  one chosen.
-                                  column(6,
+                          
+                                  column(12,
                                          box(
                                            title = 'AIC',
                                            width = 12,
                                            status = 'primary',
                                          DT::dataTableOutput('aic_table')))
+                                ),
+                                fluidRow(
+                                  column(6,
+                                         box(
+                                           title = 'Peril data',
+                                           width = 12,
+                                           status = 'primary',
+                                           plotOutput('hist_plot'))),
+                                  column(6,
+                                         box(
+                                           title = 'Simulation data',
+                                           width = 12,
+                                           status = 'primary',
+                                           plotOutput('sim_plot')))
                                 ),
                                 fluidRow(
                                   column(6,
@@ -253,127 +257,184 @@ server <- function(input, output) {
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
   get_aic_mle <- reactive({
     
-    
-    
     # get country data
     data  <- selected_country()
     
     ##########
     # fit lognormal
     #########
-    log_normal <- fitdistr(data$Loss, "lognormal")
-    # get aic
-    log_normal_aic <- round(AIC(log_normal), 4)
-    # if there is an error, fill object with NA
-    message('log normal AIC is ', log_normal_aic)
-    if(!exists('log_normal_aic')){
+    log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
+    if(class(log_normal) == 'try-error'){
+      log_normal <- NULL
       log_normal_aic <- NA
+      log_normal$estimate[1] <- NA
+      log_normal$estimate[2] <- NA
+      
+    } else {
+      # get aic
+      log_normal_aic <- round(AIC(log_normal), 4)
+      
+      # if there is an error, fill object with NA
+      message('log normal AIC is ', log_normal_aic)
+     
+      # get MLE 
+      log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
+      message('log normal mle is ', log_normal_mle)
     }
-    # get MLE 
-    log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-    message('log normal mle is ', log_normal_mle)
-    # create data frame to store aic and MLEs
-    log_normal_data <- data_frame(name = 'log_normal',
-                                  aic = log_normal_aic, 
-                                  mle_1 = round(log_normal$estimate[1], 4),
-                                  mle_2 = round(log_normal$estimate[2]^2, 4))
+      # create data frame to store aic and MLEs
+      log_normal_data <- data_frame(name = 'log_normal',
+                                    aic = log_normal_aic, 
+                                    mle_1 = log_normal$estimate[1],
+                                    mle_2 = log_normal$estimate[2]^2)
+      
     
+   
     # fit beta (only one not replicating)
     # normalize data to 0, 1
+    beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
+    if(class(beta) == 'try-error'){
+      beta <- NULL
+      beta_aic <- NA
+      beta$shape1 <- NA
+      beta$shape2 <- NA
+      beta_mle <- c(beta$shape1, beta$shape2)
+    } else {
+      beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
+      beta_aic <- -(2*beta_ll + 2) 
+      beta_mle <- c(beta$shape1, beta$shape2)
+      
+      # beta_aic <- round(beta$aic, 4)
+      message('beta AIC is ', beta_aic)
+      message('beta mle is ', beta_mle)
+    }
+      beta_data <- data_frame(name = 'beta',
+                              aic = round(beta_aic, 4), 
+                              mle_1 = beta_mle[1],
+                              mle_2 = beta_mle[2])
+      
     
-    beta <- eBeta_ab(data$Loss, method = "numerical.MLE")
-    beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
-    beta_aic <- -(2*beta_ll + 2) 
-    beta_mle <- c(beta$shape1, beta$shape2)
-    
-    # beta_aic <- round(beta$aic, 4)
-    message('beta AIC is ', beta_aic)
-    message('beta mle is ', beta_mle)
-    beta_data <- data_frame(name = 'beta',
-                            aic = round(beta_aic, 4), 
-                            mle_1 = round(beta_mle[1], 4),
-                            mle_2 = round(beta_mle[2], 4))
-    
+   
     # EQUATION FOR AIC 
     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
 
     # fit gamma
-    gamma <- fitdistrplus::fitdist(data$Loss, "gamma", start=list( shape=1, scale=1), method="mle")
-    gamma_aic <- round(gamma$aic, 4)
-    message('gamma AIC is ', gamma_aic)
-    if(!exists('gamma_aic')){
+    # gamma <- fitdistr(data$Loss, 'gamma')
+    gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
+    
+    if(class(gamma) == 'try-error'){
+      gamma <- NULL
       gamma_aic <- NA
+      gamma$estimate[1] <- NA
+      gamma$estimate[2] <- NA
+      
+    } else {
+      # get aic
+      gamma_aic <- round(gamma$aic, 4)
+      message('gamma AIC is ', gamma_aic)
+      
+      # get mle 
+      gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
+      message('gamme mle is ', gamma_mle)
     }
-    # get mle 
-    gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-    message('gamme mle is ', gamma_mle)
-    gamma_data <- data_frame(name = 'gamma',
-                                  aic = gamma_aic, 
-                                  mle_1 = round(gamma$estimate[1], 4),
-                                  mle_2 = round(gamma$estimate[2], 4))
+      gamma_data <- data_frame(name = 'gamma',
+                               aic = gamma_aic, 
+                               mle_1 = gamma$estimate[1],
+                               mle_2 = gamma$estimate[2])
+    
+    
     
     # fit frechet
-    dfrechet(data$Loss, mu = 0, sigma = 1, log = TRUE)
-    frechet <- fitdistrplus::fitdist(data$Loss, "frechet", start=list(mu=0, sigma=1), method="mle")
-    frechet_aic <- round(frechet$aic, 4)
-    message('frechet AIC is ', frechet_aic)
-    if(!exists('frechet_aic')){
+    # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
+    frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(lambda = 1, mu=0.5, sigma=1), method="mle"), 
+                   silent = TRUE)
+    if(class(frechet) == 'try-error'){
+      frechet <- NULL
       frechet_aic <- NA
-    }
-    # get mle 
-    frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-    message('frechet mle is ', frechet_mle)
-    frechet_data <- data_frame(name = 'frechet',
-                                  aic = frechet_aic, 
-                                  mle_1 = round(frechet$estimate[1], 4),
-                                  mle_2 = round(frechet$estimate[2], 4))
+      frechet$estimate[1] <- NA
+      frechet$estimate[2] <- NA
+      
+    } else {
+      frechet_aic <- round(frechet$aic, 4)
+      message('frechet AIC is ', frechet_aic)
+      # get mle 
+      frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
+      message('frechet mle is ', frechet_mle) 
+      }
+      frechet_data <- data_frame(name = 'frechet',
+                                 aic = frechet_aic, 
+                                 mle_1 = frechet$estimate[1],
+                                 mle_2 = frechet$estimate[2])
+      
+    
     
     # git gumbel
-    gumbel_fit <- fit_gumbel(data$Loss)
-    gumbel_aic <- round(gumbel_fit$aic, 4)
-    message('gumbel AIC is ', gumbel_aic)
-    if(!exists('gumbel_aic')){
+    gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
+    if(class(gumbel_fit) == 'try-error'){
+      gumbel_fit <- NULL
       gumbel_aic <- NA
+      gumbel_fit$estimate[1] <- NA
+      gumbel_fit$estimate[2] <- NA
+      
+    } else {
+      gumbel_aic <- round(gumbel_fit$aic, 4)
+      message('gumbel AIC is ', gumbel_aic)
+      # get mle
+      gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
+      message('gumbel mle is ', gumbel_mle)
     }
-    # get mle
-    gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-    message('gumbel mle is ', gumbel_mle)
-    gumbel_data <- data_frame(name = 'gumbel',
-                                  aic = gumbel_aic, 
-                                  mle_1 = round(gumbel_fit$estimate[1], 4),
-                                  mle_2 = round(gumbel_fit$estimate[2], 4))
+      gumbel_data <- data_frame(name = 'gumbel',
+                                aic = gumbel_aic, 
+                                mle_1 = gumbel_fit$estimate[1],
+                                mle_2 = gumbel_fit$estimate[2])
+      
+    
     
     # fit weibull
-    weibull <- fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=1, scale=1), method="mle")
-    weibull_aic <- round(weibull$aic, 4)
-    message('weibull AIC is ', weibull_aic)
-    if(!exists('weibull_aic')){
+    weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
+    if(class(weibull) == 'try-error'){
+      weibull <- NULL
       weibull_aic <- NA
+      weibull$estimate[1] <- NA
+      weibull$estimate[2] <- NA
+      
+    } else {
+      weibull_aic <- round(weibull$aic, 4)
+      message('weibull AIC is ', weibull_aic)
+    
+      # get mle
+      weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
+      message('weibull mle is ', weibull_mle)
     }
-    # get mle
-    weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-    message('weibull mle is ', weibull_mle)
-    weibull_data <- data_frame(name = 'weibull',
-                                  aic = weibull_aic, 
-                                  mle_1 = round(weibull$estimate[1], 4),
-                                  mle_2 = round(weibull$estimate[2], 4))
+      weibull_data <- data_frame(name = 'weibull',
+                                 aic = weibull_aic, 
+                                 mle_1 = weibull$estimate[1],
+                                 mle_2 = weibull$estimate[2])
+      
+    
     
    # fit pareto
    pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
-   pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-   message('pareto AIC is ', pareto_aic)
-   if(!exists('pareto_aic')){
+   if(class(pareto) == 'try-error'){
+     pareto <- NULL
      pareto_aic <- NA
+     pareto_fit$estimate[1] <- NA
+     pareto_fit$estimate[2] <- NA
+     
+   } else { 
+     pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
+     message('pareto AIC is ', pareto_aic)
+     # get mle
+     pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
+     message('pareto mle is ', pareto_mle)
    }
-   # get mle
-   pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-   message('pareto mle is ', pareto_mle)
-   pareto_data <- data_frame(name = 'pareto',
-                              aic = pareto_aic, 
-                              mle_1 = round(pareto$estimate[[1]], 4),
-                              mle_2 = round(pareto$estimate[[2]], 4))
-  
-   
+     pareto_data <- data_frame(name = 'pareto',
+                               aic = pareto_aic, 
+                               mle_1 = pareto$estimate[[1]],
+                               mle_2 = pareto$estimate[[2]])
+     
+     
+    
+ 
    # create a data frame out of data results
    aic_mle_data <- rbind(log_normal_data,
                          gamma_data,
@@ -402,23 +463,26 @@ server <- function(input, output) {
     
   }) 
 
-  
-  # create a reactive function to get rag ratings
-  get_rag_ratings <- reactive({
-    aic_mle_data <- get_aic_mle()
-    # assign red, amber, or green to the distributions 
-   
-  })
-  
+
+  # # create a reactive function to get rag ratings
+  # get_rag_ratings <- reactive({
+  #   aic_mle_data <- get_aic_mle()
+  #   # assign red, amber, or green to the distributions 
+  #  
+  # })
+  # 
   # create a reactive object that takes the aic_mle_data runs simulations on the 
   # best distribution (found from min aic)
   run_best_simulation <- reactive({
+    set.seed(11)
     
     dat <- get_aic_mle()
     # get index for minimum aic
-    aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-    # subset my index
-    dat <- dat[aic_min_ind,]
+    # aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+    # # subset my index
+    # dat <- dat[aic_min_ind,]
+    dat <- dat[dat$Distribution == 'Gamma',]
+    
     # set conditions for each distribution
     if(dat$Distribution == 'Log normal'){
       if(any(is.na(dat$AIC))){
@@ -427,70 +491,104 @@ server <- function(input, output) {
       else {
         sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
       }
-    }
-    else if (dat$Distribution == 'Gamma'){
+    } else if (dat$Distribution == 'Gamma'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } 
-      else {
-        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }  else {
+        # check to see how much seed matters
+        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
       }
-    } 
-    else if (dat$Distribution == 'Beta'){
+    } else if (dat$Distribution == 'Beta'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } 
-      else {
-        sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = 1/dat$`MLE 2`)
+      } else {
+        sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = dat$`MLE 2`)
       }
-    } 
-    else if (dat$Distribution == 'Frechet'){
+    }  else if (dat$Distribution == 'Frechet'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } 
-      else {
+      }  else {
         sim <- rfrechet(n = 15000, loc=0, scale=dat$`MLE 1`, shape=dat$`MLE 2`)
       }
-    } 
-    else if (dat$Distribution == 'Gumbel'){
+    } else if (dat$Distribution == 'Gumbel'){
       if(any(is.na(dat$AIC))){
         sim <- NA 
-      } 
-      else {
-        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      } else {
+        sim <- actuar::rgumbel(n = 15000, alpha = dat$`MLE 1`, scale = dat$`MLE 2`)
       }
-    } 
-    else if (dat$Distribution == 'Weibull'){
+    } else if (dat$Distribution == 'Weibull'){
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } 
-      else {
-        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }  else {
+        sim <- rweibull(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
       }
-    } 
-    else {
+    } else {
       if(any(is.na(dat$AIC))){
         sim <- NA
-      } 
-      else {
-        sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = 1/dat$`MLE 2`)
+      }  else {
+        sim <- extraDistr::rpareto(n = 15000, a = dat$`MLE 1`, b = dat$`MLE 2`)
       }
     }
-    
+    return(sim)
   })
   
+  # create a ouput plot that draws a density of the distribution over the 
+  # histogram of raw data
+  
+  output$hist_plot <- renderPlot({
+    data <- selected_country()
+    
+    ggplot(data, aes(data$Loss)) +
+      geom_histogram(bins = 5, fill = 'black', alpha = 0.6) + 
+      labs(x = 'Loss', 
+           y = 'Counts') +
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 0, size = 12),
+            axis.text.y = element_text(size = 12),
+            axis.title = element_text(size = 12)) 
+    
+  })
+  output$sim_plot <- renderPlot({
+    dat_sim <- run_best_simulation()
+    dat_sim <- as.data.frame(dat_sim)
+    names(dat_sim) <- 'Simulated loss'
+    ggplot(dat_sim, aes(`Simulated loss`)) +
+      geom_density(fill = 'black', alpha = 0.5) +
+      labs(y = 'Density') +
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 0, size = 12),
+            axis.text.y = element_text(size = 12),
+            axis.title = element_text(size = 12)) 
+    
+  })
   
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
    
-    # a <- afghanistan_data[[5]]
-    # m <- malaysia_data[[5]]
-    # s <- Senegal_data[[5]]
-    # so <- somalia_data[[5]]
-    
+    # get country data
+    data <- selected_country()
+    data <- data[order(data$Year, decreasing = FALSE),]
+    # get country input for plot title
     plot_title <- input$country
-    country_data <- selected_country()
-    dat <- country_data[[5]]
+    # get best distirbution 
+    dat_sim <- run_best_simulation()
+    # get quaintles 
+    output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
+    annual_avg <- mean(dat_sim)
+    
+    # create data frame dat to store output with chart labels 
+    dat <- data_frame(`Annual average` = annual_avg, 
+                      `1 in 5 Years` = output[1],
+                      `1 in 10 Years` = output[2],
+                      `1 in 25 Years` = output[3],
+                      `1 in 50 Years` = output[4],
+                      `1 in 100 Years` = output[5],
+                      `Highest historical annual loss` = max(data$Loss),
+                      `Most recent annual loss` = data$Loss[nrow(data)])
+    
+    # melt the data frame to get value and variable 
+    dat <- melt(dat)
+    
     plot_bar(temp_dat = dat, 
              bar_color = 'black', 
              border_color = 'black', 
@@ -503,25 +601,61 @@ server <- function(input, output) {
  
   # exhibit 2
   output$loss_exceedance <- renderPlot({
+    data <- selected_country()
+    data <- data[order(data$Year, decreasing = FALSE),]
+    largest_loss_num <- max(data$Loss)/100000
+    largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
     
-    country_data <- selected_country()
-    dat <- country_data[[8]]
+    # get country input for plot title
     plot_title <- input$country
-    plot_line(temp_dat = dat, 
+    # get best distirbution 
+    dat_sim <- run_best_simulation()
+    peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
+    peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
+    rownames(peril_exceedance_curve) <- NULL
+    names(peril_exceedance_curve)[1] <- 'y'
+    
+    # remove percent and turn numeric
+    peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
+    peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
+    peril_exceedance_curve$x <- peril_exceedance_curve$x/100
+  
+    # divide y by 100k, so get data in millions 
+    peril_exceedance_curve$y <- peril_exceedance_curve$y/100000
+    plot_line(temp_dat = peril_exceedance_curve, 
               line_color = 'black', 
               line_size = 2, 
               alpha = 0.7, 
               exhibit_2 = TRUE, 
+              largest_loss_num = largest_loss_num,
+              largest_loss_year= largest_loss_year,
               plot_title = plot_title)
   })
   
   # annual loss (exhibit 3)
   output$annual_loss_gap <- renderPlot({
+    # get country data
+    data <- selected_country()
+    data <- data[order(data$Year, decreasing = FALSE),]
+    # get country input for plot title
     plot_title <- input$country
+    # get best distirbution 
+    dat_sim <- run_best_simulation()
+    # get quaintles 
+    output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
+    annual_avg <- mean(dat_sim)
     
-    country_data <- selected_country()
-    dat <- country_data[[7]]
-  
+    # create data frame dat to store output with chart labels 
+    dat <- data_frame(`Average` = annual_avg, 
+                      `Severe` = output[2],
+                      `Extreme` = output[5])
+    
+    # melt the data frame to get value and variable 
+    dat <- melt(dat)
+    
+    # divide valueb by 100k
+    dat$value <- dat$value/100000
+    
     plot_bar(temp_dat = dat, 
              bar_color = 'black', 
              border_color = 'black', 
@@ -534,11 +668,31 @@ server <- function(input, output) {
   
   output$loss_exceedance_gap <- renderPlot({
   
-    plot_title <- input$country
-    country_data <- selected_country()
-    dat <- country_data[[6]]
+    data <- selected_country()
+    data <- data[order(data$Year, decreasing = FALSE),]
+    largest_loss_num <- max(data$Loss)/100000
+    largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
     
-    plot_line(temp_dat = dat, 
+    # get country input for plot title
+    plot_title <- input$country
+    # get best distirbution 
+    dat_sim <- run_best_simulation()
+    funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
+    funding_gap_curve$x <- rownames(funding_gap_curve)
+    rownames(funding_gap_curve) <- NULL
+    names(funding_gap_curve)[1] <- 'y'
+    
+    # remove percent and turn numeric
+    funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+    funding_gap_curve$x <- as.numeric(funding_gap_curve$x)
+    funding_gap_curve$x <- funding_gap_curve$x/100
+    
+    # divide y by 100k, so get data in millions 
+    funding_gap_curve$y <- funding_gap_curve$y/100000
+    funding_gap_curve$x <- (1 - funding_gap_curve$x)
+    
+    
+    plot_line(temp_dat = funding_gap_curve, 
               line_color = 'black', 
               line_size = 2, 
               alpha = 0.7, 
@@ -550,25 +704,24 @@ server <- function(input, output) {
   })
   
 
-  # create table for aic
-  output$mle_table <- renderDataTable({
-    
-      country_data <- selected_country()
-      mle_data <- country_data[[2]]
-      mle_data <- apply(mle_data, 2, function(x) as.numeric(x))
-      mle_data <- apply(mle_data, 2, function(x) round(x, 4))
-      DT::datatable(mle_data, options = list(dom = 't'))
-      
-    
-  }) 
-  
+  # # create table for aic
+  # output$mle_table <- renderDataTable({
+  #   
+  #     country_data <- selected_country()
+  #     mle_data <- country_data[[2]]
+  #     mle_data <- apply(mle_data, 2, function(x) as.numeric(x))
+  #     mle_data <- apply(mle_data, 2, function(x) round(x, 4))
+  #     DT::datatable(mle_data, options = list(dom = 't'))
+  #     
+  #   
+  # }) 
+  # 
   # create an amendable table for table_1 if input$
   output$data_table_peril <- renderDataTable({
     amend_upload <- input$amend_upload
     if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
       country_data <- selected_country()
-      raw_data <- country_data[[1]]
-      DT::datatable(raw_data)
+      DT::datatable(country_data)
     } else {
       NULL
     }
@@ -599,9 +752,8 @@ server <- function(input, output) {
     } 
     else {
       country_data <- selected_country()
-      raw_data <- country_data[[1]]
       # get data based on country input
-      ggplot(raw_data, aes(Year, Loss)) +
+      ggplot(country_data, aes(Year, Loss)) +
         geom_bar(stat = 'identity', fill = 'darkblue',
                  color = 'blue', 
                  alpha = 0.7) +

@@ -28,7 +28,10 @@ library(ExtDist)
 source('functions.R')
 options(scipen = '999')
 
-countries <- c('Afghanistan', 'Somalia', 'Malaysia', 'Senegal')
+countries <- c('Afghanistan', 
+               #'Somalia', 
+               'Malaysia', 
+               'Senegal')
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
