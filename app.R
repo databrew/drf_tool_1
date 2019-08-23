@@ -285,7 +285,7 @@ server <- function(input, output) {
       log_normal_data <- data_frame(name = 'log_normal',
                                     aic = log_normal_aic, 
                                     mle_1 = log_normal$estimate[1],
-                                    mle_2 = log_normal$estimate[2]^2)
+                                    mle_2 = log_normal$estimate[2])
       
     
    
@@ -477,12 +477,13 @@ server <- function(input, output) {
     set.seed(11)
     
     dat <- get_aic_mle()
+    # for now remove beta
+    dat <- dat[dat$Distribution != 'Beta',]
     # get index for minimum aic
-    # aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+    aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
     # # subset my index
-    # dat <- dat[aic_min_ind,]
-    dat <- dat[dat$Distribution == 'Gamma',]
-    
+    dat <- dat[aic_min_ind,]
+
     # set conditions for each distribution
     if(dat$Distribution == 'Log normal'){
       if(any(is.na(dat$AIC))){
@@ -564,12 +565,17 @@ server <- function(input, output) {
   
   # annual loss exhibit 1
   output$annual_loss <- renderPlot({
-   
+    
     # get country data
     data <- selected_country()
     data <- data[order(data$Year, decreasing = FALSE),]
     # get country input for plot title
     plot_title <- input$country
+    if(plot_title == 'Afghanistan'){
+      scale_by = 1
+    } else {
+      scale_by = 1000000
+    }
     # get best distirbution 
     dat_sim <- run_best_simulation()
     # get quaintles 
@@ -602,12 +608,19 @@ server <- function(input, output) {
   # exhibit 2
   output$loss_exceedance <- renderPlot({
     data <- selected_country()
+    country_name <- unique(data$Country)
+   
     data <- data[order(data$Year, decreasing = FALSE),]
-    largest_loss_num <- max(data$Loss)/100000
+    largest_loss_num <- max(data$Loss)
     largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
     
     # get country input for plot title
     plot_title <- input$country
+    if(plot_title == 'Afghanistan'){
+      scale_by = 1
+    } else {
+      scale_by = 1000000
+    }
     # get best distirbution 
     dat_sim <- run_best_simulation()
     peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
@@ -618,10 +631,8 @@ server <- function(input, output) {
     # remove percent and turn numeric
     peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
     peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-    peril_exceedance_curve$x <- peril_exceedance_curve$x/100
-  
+
     # divide y by 100k, so get data in millions 
-    peril_exceedance_curve$y <- peril_exceedance_curve$y/100000
     plot_line(temp_dat = peril_exceedance_curve, 
               line_color = 'black', 
               line_size = 2, 
@@ -635,10 +646,16 @@ server <- function(input, output) {
   # annual loss (exhibit 3)
   output$annual_loss_gap <- renderPlot({
     # get country data
+
     data <- selected_country()
     data <- data[order(data$Year, decreasing = FALSE),]
     # get country input for plot title
     plot_title <- input$country
+    if(plot_title == 'Afghanistan'){
+      scale_by = 1
+    } else {
+      scale_by = 1000000
+    }
     # get best distirbution 
     dat_sim <- run_best_simulation()
     # get quaintles 
@@ -654,7 +671,7 @@ server <- function(input, output) {
     dat <- melt(dat)
     
     # divide valueb by 100k
-    dat$value <- dat$value/100000
+    dat$value <- dat$value/scale_by
     
     plot_bar(temp_dat = dat, 
              bar_color = 'black', 
@@ -667,14 +684,19 @@ server <- function(input, output) {
   # exhibit 4
   
   output$loss_exceedance_gap <- renderPlot({
-  
+
     data <- selected_country()
     data <- data[order(data$Year, decreasing = FALSE),]
-    largest_loss_num <- max(data$Loss)/100000
+    largest_loss_num <- max(data$Loss)
     largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
     
     # get country input for plot title
     plot_title <- input$country
+    if(plot_title == 'Afghanistan'){
+      scale_by = 1
+    } else {
+      scale_by = 1000000
+    }
     # get best distirbution 
     dat_sim <- run_best_simulation()
     funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
@@ -684,13 +706,11 @@ server <- function(input, output) {
     
     # remove percent and turn numeric
     funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-    funding_gap_curve$x <- as.numeric(funding_gap_curve$x)
-    funding_gap_curve$x <- funding_gap_curve$x/100
-    
+    funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+
     # divide y by 100k, so get data in millions 
-    funding_gap_curve$y <- funding_gap_curve$y/100000
     funding_gap_curve$x <- (1 - funding_gap_curve$x)
-    
+    funding_gap_curve$y <- funding_gap_curve$y/scale_by
     
     plot_line(temp_dat = funding_gap_curve, 
               line_color = 'black', 
