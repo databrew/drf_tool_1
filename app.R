@@ -345,7 +345,7 @@ server <- function(input, output) {
     
     # fit frechet
     # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-    frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(lambda = 1, mu=0.5, sigma=1), method="mle"), 
+    frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"), 
                    silent = TRUE)
     if(class(frechet) == 'try-error'){
       frechet <- NULL
